@@ -54,13 +54,17 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
         c.drawImage(temp_image_path, x_position, y_position, width=image_width, height=image_height, mask="auto")
         c.save()
 
-        # Fusionne la page temporaire avec la page actuelle
+        # Charger la page temporaire et fusionner avec la page originale
         with open(temp_pdf, "rb") as temp_file:
             temp_reader = PdfReader(temp_file)
             overlay_page = temp_reader.pages[0]
+
+            # Appliquer l'overlay directement sur la page
+            page_data = page.get_pixmap()
+            overlay_page.merge_page(PdfReader(fitz.open(page_data)).pages[0])
             writer.add_page(overlay_page)
 
-        # Supprime le fichier temporaire après utilisation
+        # Supprimer le fichier temporaire après utilisation
         os.remove(temp_pdf)
 
     # Supprimer l'image temporaire
