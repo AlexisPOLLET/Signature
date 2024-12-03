@@ -38,6 +38,9 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
             x_position = width - image_width - 10
             y_position = 150
 
+        # Transparence (créée via une multiplication de l'opacité sur le PDF complet)
+        c.setFillAlpha(0.5)
+
         # Créer une page temporaire avec la signature
         c = canvas.Canvas(temp_pdf, pagesize=(width, height) if rotation in [0, 180] else landscape((width, height)))
         c.drawImage(image_path, x_position, y_position, width=image_width, height=image_height, preserveAspectRatio=True, mask='auto')
