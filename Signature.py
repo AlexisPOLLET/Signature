@@ -6,7 +6,6 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from PIL import Image
 from io import BytesIO
-import pytesseract
 import fitz  # PyMuPDF
 
 def add_image_to_pdf(input_pdf, output_pdf, image_path):
@@ -64,7 +63,7 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
 
 def extract_text_from_pdf(input_pdf):
     """
-    Extrait le texte d'un fichier PDF. Utilise l'OCR pour les pages scannées.
+    Extrait le texte d'un fichier PDF.
 
     Args:
         input_pdf (str): Chemin du fichier PDF.
@@ -78,15 +77,6 @@ def extract_text_from_pdf(input_pdf):
     reader = PdfReader(input_pdf)
     for page in reader.pages:
         text += page.extract_text()
-
-    # Si aucun texte n'est extrait, utiliser l'OCR avec PyMuPDF
-    if not text.strip():
-        pdf_document = fitz.open(input_pdf)
-        for page_num in range(len(pdf_document)):
-            page = pdf_document[page_num]
-            pix = page.get_pixmap()
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            text += pytesseract.image_to_string(img, lang="eng")
 
     return text
 
@@ -150,6 +140,9 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
         bool: True si le fichier a été modifié, False sinon.
     """
     text = extract_text_from_pdf(input_pdf)
+    if not text.strip():
+        st.warning(f"Le fichier {input_pdf} ne contient pas de texte détectable.")
+        return False
     if keyword in text:
         add_image_to_pdf(input_pdf, output_pdf, image_path)
         return True
@@ -159,7 +152,7 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
 st.title("Outil de signature automatique des documents PDF")
 
 st.write("**Instructions :** Vous pouvez téléverser plusieurs fichiers PDF ou une archive ZIP contenant des fichiers PDF.")
-st.code("pip install PyPDF2 reportlab streamlit pillow pytesseract pymupdf")
+st.code("pip install PyPDF2 reportlab streamlit pillow pymupdf")
 
 uploaded_files = st.file_uploader("Téléchargez des fichiers ZIP ou PDF", type=["zip", "pdf"], accept_multiple_files=True)
 search_keyword = st.text_input("Entrez le mot-clé à rechercher")
