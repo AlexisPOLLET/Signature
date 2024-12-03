@@ -1,4 +1,4 @@
-import os
+ import os
 import zipfile
 import streamlit as st
 from PyPDF2 import PdfReader, PdfWriter
@@ -72,7 +72,7 @@ def extract_text_from_pdf(input_pdf):
             text += page_text
         else:
             # Effectuer l'OCR sur la page si aucun texte n'est trouvé
-            images = convert_from_path(input_pdf, first_page=page_num + 1, last_page=page_num + 1)
+            images = convert_from_path(input_pdf, first_page=page_num + 1, last_page=page_num + 1, poppler_path='/usr/bin')
             for image in images:
                 text += pytesseract.image_to_string(image)
 
@@ -193,4 +193,3 @@ try:
     import pytesseract
 except ImportError as e:
     st.error(f"Erreur d'importation des bibliothèques : {str(e)}. Veuillez installer les dépendances indiquées ci-dessus.")
-
