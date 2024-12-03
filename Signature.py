@@ -22,10 +22,10 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
     width, height = letter
 
     # Réduction de la taille et positionnement en bas à droite
-    image_width = 200
-    image_height = 100
+    image_width = 100
+    image_height = 50
     x_position = width - image_width - 10
-    y_position = 25
+    y_position = 100
 
     # Transparence (créée via une multiplication de l'opacité sur le PDF complet)
     c.setFillAlpha(0.5)
