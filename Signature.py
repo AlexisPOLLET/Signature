@@ -1,10 +1,11 @@
 import os
 import zipfile
 import streamlit as st
-from PyPDF2 import PdfReader, PdfWriter, PageObject
+from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from PIL import Image
+from io import BytesIO
 
 def add_image_to_pdf(input_pdf, output_pdf, image_path):
     """
@@ -30,8 +31,8 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
     transparent_image.save(temp_image_path, "PNG")
 
     for page_num, page in enumerate(reader.pages):
-        packet = io.BytesIO()
-        can = canvas.Canvas(packet, pagesize=letter)
+        packet = BytesIO()
+        can = canvas.Canvas(packet, pagesize=(float(page.mediabox.width), float(page.mediabox.height)))
 
         # Déterminer la taille de la page
         width = float(page.mediabox.width)
@@ -48,8 +49,8 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
 
         # Fusionner l'image avec la page originale
         packet.seek(0)
-        new_pdf = PdfReader(packet)
-        overlay_page = new_pdf.pages[0]
+        overlay_reader = PdfReader(packet)
+        overlay_page = overlay_reader.pages[0]
         page.merge_page(overlay_page)
         writer.add_page(page)
 
@@ -183,3 +184,4 @@ if st.button("Lancer la signature"):
             os.remove(file_path)
     else:
         st.error("Veuillez fournir des fichiers ZIP ou PDF, un mot-clé et une image de signature.")
+
