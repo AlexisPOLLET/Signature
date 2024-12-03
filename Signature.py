@@ -57,19 +57,14 @@ def search_and_sign_documents(file, keyword, image_path):
     """
     reader = PdfReader(file)
     content = "".join([page.extract_text() for page in reader.pages])
-
     if keyword in content:
         output_path = file.replace(".pdf", "_signed.pdf")
         add_image_to_pdf(file, output_path, image_path)
         return output_path
-
     return None
 
 # Interface utilisateur Streamlit
 st.title("Outil de signature automatique des documents PDF")
-
-st.write("**Instructions :** Assurez-vous que les dépendances suivantes sont installées avant de lancer ce script :")
-st.code("pip install PyPDF2 reportlab streamlit")
 
 uploaded_file = st.file_uploader("Téléchargez un fichier PDF", type="pdf")
 search_keyword = st.text_input("Entrez le mot-clé à rechercher")
@@ -80,10 +75,8 @@ if st.button("Lancer la signature"):
         # Sauvegarde des fichiers temporairement
         input_pdf_path = f"temp_{uploaded_file.name}"
         image_path = f"temp_{signature_image.name}"
-
         with open(input_pdf_path, "wb") as f:
             f.write(uploaded_file.read())
-
         with open(image_path, "wb") as f:
             f.write(signature_image.read())
 
@@ -109,10 +102,3 @@ if st.button("Lancer la signature"):
             os.remove(result)
     else:
         st.error("Veuillez fournir un fichier PDF, un mot-clé et une image de signature.")
-
-# Gestion des erreurs pour les bibliothèques manquantes
-try:
-    import PyPDF2
-    from reportlab.pdfgen import canvas
-except ImportError as e:
-    st.error(f"Erreur d'importation des bibliothèques : {str(e)}. Veuillez installer les dépendances indiquées ci-dessus.")
