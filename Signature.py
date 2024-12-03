@@ -1,5 +1,4 @@
-!pip install streamlit PyPDF2 reportlab
-
+install streamlit PyPDF2 reportlab
 
 import os
 import streamlit as st
