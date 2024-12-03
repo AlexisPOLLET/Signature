@@ -4,10 +4,11 @@ import streamlit as st
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
 
 def add_image_to_pdf(input_pdf, output_pdf, image_path):
     """
-    Ajoute une image en bas de la première page d'un PDF.
+    Ajoute une image en bas à droite de la première page d'un PDF, en petite taille et avec transparence.
 
     Args:
         input_pdf (str): Chemin du fichier PDF d'entrée.
@@ -19,7 +20,17 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
     # Crée un PDF temporaire avec l'image
     c = canvas.Canvas(temp_pdf, pagesize=letter)
     width, height = letter
-    c.drawImage(image_path, 50, 50, width=200, preserveAspectRatio=True, mask='auto')
+
+    # Réduction de la taille et positionnement en bas à droite
+    image_width = 100
+    image_height = 50
+    x_position = width - image_width - 10
+    y_position = 10
+
+    # Transparence (créée via une multiplication de l'opacité sur le PDF complet)
+    c.setFillAlpha(0.5)
+
+    c.drawImage(image_path, x_position, y_position, width=image_width, height=image_height, preserveAspectRatio=True, mask='auto')
     c.save()
 
     # Fusionne le PDF temporaire avec l'original
@@ -153,4 +164,3 @@ try:
     from reportlab.pdfgen import canvas
 except ImportError as e:
     st.error(f"Erreur d'importation des bibliothèques : {str(e)}. Veuillez installer les dépendances indiquées ci-dessus.")
-    
