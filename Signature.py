@@ -8,7 +8,7 @@ import fitz  # PyMuPDF
 
 def add_image_to_pdf(input_pdf, output_pdf, image_path):
     """
-    Ajoute une image en bas à droite de chaque page d'un PDF, en petite taille et avec transparence.
+    Ajoute une image en bas à droite de chaque page d'un PDF, en petite taille.
     La rotation de la signature est ajustée en fonction de l'orientation de la page.
 
     Args:
@@ -30,13 +30,10 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
         image_height = 50
         if rotation in [90, 270]:  # Page en mode paysage
             x_position = height - image_width - 10
-            y_position = 150
+            y_position = 10
         else:  # Page en mode portrait
             x_position = width - image_width - 10
             y_position = 10
-
-        # Transparence (créée via une multiplication de l'opacité sur le PDF complet)
-        c.setFillAlpha(0.5)
 
         # Créer une page temporaire avec la signature
         temp_pdf = f"temp_page_{page_num}.pdf"
@@ -180,3 +177,4 @@ if st.button("Lancer la signature"):
             os.remove(file_path)
     else:
         st.error("Veuillez fournir des fichiers ZIP ou PDF, un mot-clé et une image de signature.")
+
