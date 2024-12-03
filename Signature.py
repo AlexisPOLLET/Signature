@@ -9,6 +9,11 @@ import pytesseract
 from PIL import Image
 import io
 
+# Configure le chemin de Tesseract si nécessaire
+if os.name == 'nt':  # Windows
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
+
 def add_image_to_pdf(input_pdf, output_pdf, image_path):
     """
     Ajoute une image en bas à droite de chaque page d'un PDF, en petite taille et avec transparence.
