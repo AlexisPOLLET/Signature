@@ -1,3 +1,5 @@
+!pip install PyPDF2 reportlab
+
 import os
 import streamlit as st
 from PyPDF2 import PdfReader, PdfWriter
