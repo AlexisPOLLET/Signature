@@ -1,5 +1,3 @@
-pip uninstall streamlit
-pip install streamlit
 PyPDF2
 reportlab
 streamlit
