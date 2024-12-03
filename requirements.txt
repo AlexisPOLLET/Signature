@@ -2,3 +2,4 @@ PyPDF2
 reportlab
 streamlit
 pytesseract
+pdf2image
