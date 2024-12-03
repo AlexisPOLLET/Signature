@@ -112,14 +112,14 @@ def process_files_and_sign_documents(uploaded_files, keyword, image_path):
                         if file.endswith(".pdf"):
                             pdf_path = os.path.join(root, file)
                             output_path = pdf_path.replace(".pdf", "_signed.pdf")
-                            if search_and_add_signature(pdf_path, output_path, keyword, image_path):
-                                modified_files.append(output_path)
+                            search_and_add_signature(pdf_path, output_path, keyword, image_path)
+                            modified_files.append(output_path)
 
         elif file_name.endswith(".pdf"):
             # Traiter les fichiers PDF individuels
             output_path = temp_path.replace(".pdf", "_signed.pdf")
-            if search_and_add_signature(temp_path, output_path, keyword, image_path):
-                modified_files.append(output_path)
+            search_and_add_signature(temp_path, output_path, keyword, image_path)
+            modified_files.append(output_path)
 
         # Supprime le fichier temporaire
         os.remove(temp_path)
@@ -128,7 +128,7 @@ def process_files_and_sign_documents(uploaded_files, keyword, image_path):
 
 def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
     """
-    Ajoute une signature (image) à chaque page d'un PDF si le fichier contient un mot-clé.
+    Ajoute une signature (image) à chaque page d'un PDF, même si aucun texte n'est détecté.
 
     Args:
         input_pdf (str): Chemin du fichier PDF d'entrée.
@@ -137,16 +137,14 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
         image_path (str): Chemin de l'image à insérer.
 
     Returns:
-        bool: True si le fichier a été modifié, False sinon.
+        None
     """
     text = extract_text_from_pdf(input_pdf)
     if not text.strip():
-        st.warning(f"Le fichier {input_pdf} ne contient pas de texte détectable.")
-        return False
-    if keyword in text:
-        add_image_to_pdf(input_pdf, output_pdf, image_path)
-        return True
-    return False
+        st.warning(f"Le fichier {input_pdf} ne contient pas de texte détectable, mais il sera quand même signé.")
+    elif keyword in text:
+        st.info(f"Mot-clé trouvé dans le fichier {input_pdf}, ajout de la signature.")
+    add_image_to_pdf(input_pdf, output_pdf, image_path)
 
 # Interface utilisateur Streamlit
 st.title("Outil de signature automatique des documents PDF")
@@ -189,3 +187,4 @@ if st.button("Lancer la signature"):
             os.remove(file_path)
     else:
         st.error("Veuillez fournir des fichiers ZIP ou PDF, un mot-clé et une image de signature.")
+
