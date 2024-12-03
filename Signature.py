@@ -29,14 +29,14 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
         width, height = mediabox.width, mediabox.height
 
         # Réduction de la taille et positionnement de l'image en fonction de l'orientation
-        image_width = 100
-        image_height = 50
+        image_width = 150
+        image_height = 100
         if rotation in [90, 270]:  # Page en mode paysage
             x_position = height - image_width - 10
-            y_position = 10
+            y_position = 150
         else:  # Page en mode portrait
             x_position = width - image_width - 10
-            y_position = 10
+            y_position = 150
 
         # Créer une page temporaire avec la signature
         c = canvas.Canvas(temp_pdf, pagesize=(width, height) if rotation in [0, 180] else landscape((width, height)))
