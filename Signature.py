@@ -43,19 +43,19 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
     # Supprime le fichier temporaire
     os.remove(temp_pdf)
 
-def search_and_sign_documents(directory, keyword, image_path):
+def search_and_sign_documents(pdf_directory, keyword, image_path):
     """
     Parcourt tous les fichiers PDF d'un répertoire, ajoute une signature (image) si le fichier contient un mot-clé.
 
     Args:
-        directory (str): Chemin du répertoire contenant les fichiers PDF.
+        pdf_directory (str): Chemin du répertoire contenant les fichiers PDF.
         keyword (str): Mot-clé à rechercher dans les fichiers.
         image_path (str): Chemin de l'image à insérer.
     """
     modified_files = []
-    for filename in os.listdir(directory):
+    for filename in os.listdir(pdf_directory):
         if filename.endswith(".pdf"):
-            file_path = os.path.join(directory, filename)
+            file_path = os.path.join(pdf_directory, filename)
             output_path = file_path.replace(".pdf", "_signed.pdf")
             if search_and_add_signature(file_path, output_path, keyword, image_path):
                 modified_files.append(filename)
@@ -84,7 +84,7 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
 # Interface utilisateur Streamlit
 st.title("Outil de signature automatique des documents PDF")
 
-pdf_directory = st.text_input("Entrez le chemin du répertoire contenant les fichiers PDF", value=".")
+pdf_directory = st.file_uploader("Téléchargez le dossier contenant les fichiers PDF", type="directory")
 search_keyword = st.text_input("Entrez le mot-clé à rechercher")
 signature_image = st.file_uploader("Téléchargez une image de signature", type=["png", "jpg", "jpeg"])
 
