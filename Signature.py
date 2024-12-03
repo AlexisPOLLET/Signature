@@ -4,6 +4,8 @@ import streamlit as st
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+from pdf2image import convert_from_path
+import pytesseract
 
 def add_image_to_pdf(input_pdf, output_pdf, image_path):
     """
@@ -26,13 +28,10 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
         width, height = letter
 
         # Réduction de la taille et positionnement en bas à droite
-        image_width = 150
-        image_height = 100
+        image_width = 100
+        image_height = 50
         x_position = width - image_width - 10
-        y_position = 150
-
-        # Transparence (créée via une multiplication de l'opacité sur le PDF complet)
-        c.setFillAlpha(0.5)
+        y_position = 10
 
         c.drawImage(image_path, x_position, y_position, width=image_width, height=image_height, preserveAspectRatio=True, mask='auto')
         c.save()
@@ -49,6 +48,32 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
 
     # Supprime le fichier temporaire
     os.remove(temp_pdf)
+
+def extract_text_from_pdf(input_pdf):
+    """
+    Extrait le texte d'un fichier PDF, y compris via OCR pour les pages scannées.
+
+    Args:
+        input_pdf (str): Chemin du fichier PDF.
+
+    Returns:
+        str: Texte extrait du PDF.
+    """
+    text = ""
+    reader = PdfReader(input_pdf)
+
+    for page_num, page in enumerate(reader.pages):
+        # Extraire le texte de la page
+        page_text = page.extract_text()
+        if page_text.strip():
+            text += page_text
+        else:
+            # Effectuer l'OCR sur la page si aucun texte n'est trouvé
+            images = convert_from_path(input_pdf, first_page=page_num + 1, last_page=page_num + 1)
+            for image in images:
+                text += pytesseract.image_to_string(image)
+
+    return text
 
 def process_files_and_sign_documents(uploaded_files, keyword, image_path):
     """
@@ -109,9 +134,8 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
     Returns:
         bool: True si le fichier a été modifié, False sinon.
     """
-    reader = PdfReader(input_pdf)
-    content = "".join([page.extract_text() for page in reader.pages])
-    if keyword in content:
+    text = extract_text_from_pdf(input_pdf)
+    if keyword in text:
         add_image_to_pdf(input_pdf, output_pdf, image_path)
         return True
     return False
@@ -120,7 +144,7 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
 st.title("Outil de signature automatique des documents PDF")
 
 st.write("**Instructions :** Vous pouvez téléverser plusieurs fichiers PDF ou une archive ZIP contenant des fichiers PDF.")
-st.code("pip install PyPDF2 reportlab streamlit")
+st.code("pip install PyPDF2 reportlab pdf2image pytesseract streamlit")
 
 uploaded_files = st.file_uploader("Téléchargez des fichiers ZIP ou PDF", type=["zip", "pdf"], accept_multiple_files=True)
 search_keyword = st.text_input("Entrez le mot-clé à rechercher")
@@ -162,5 +186,8 @@ if st.button("Lancer la signature"):
 try:
     import PyPDF2
     from reportlab.pdfgen import canvas
+    from pdf2image import convert_from_path
+    import pytesseract
 except ImportError as e:
     st.error(f"Erreur d'importation des bibliothèques : {str(e)}. Veuillez installer les dépendances indiquées ci-dessus.")
+
