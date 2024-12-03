@@ -16,32 +16,30 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
         output_pdf (str): Chemin du fichier PDF de sortie.
         image_path (str): Chemin de l'image à insérer.
     """
-    temp_pdf = "temp_page.pdf"
-
-    # Crée un PDF temporaire avec l'image sur chaque page
     doc = fitz.open(input_pdf)
     writer = PdfWriter()
 
     for page_num, page in enumerate(doc):
         # Déterminer l'orientation de la page
         rotation = page.rotation  # Rotation de la page en degrés
-        mediabox = page.mediabox
+        mediabox = page.rect
         width, height = mediabox.width, mediabox.height
 
         # Réduction de la taille et positionnement de l'image en fonction de l'orientation
-        image_width = 150
-        image_height = 100
+        image_width = 100
+        image_height = 50
         if rotation in [90, 270]:  # Page en mode paysage
             x_position = height - image_width - 10
             y_position = 150
         else:  # Page en mode portrait
             x_position = width - image_width - 10
-            y_position = 150
+            y_position = 10
 
         # Transparence (créée via une multiplication de l'opacité sur le PDF complet)
         c.setFillAlpha(0.5)
 
         # Créer une page temporaire avec la signature
+        temp_pdf = f"temp_page_{page_num}.pdf"
         c = canvas.Canvas(temp_pdf, pagesize=(width, height) if rotation in [0, 180] else landscape((width, height)))
         c.drawImage(image_path, x_position, y_position, width=image_width, height=image_height, preserveAspectRatio=True, mask='auto')
         c.save()
@@ -52,15 +50,15 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
             overlay_page = temp_reader.pages[0]
             writer.add_page(overlay_page)
 
+        # Supprime le fichier temporaire après utilisation
+        os.remove(temp_pdf)
+
     with open(output_pdf, "wb") as output_file:
         writer.write(output_file)
 
-    # Supprime le fichier temporaire
-    os.remove(temp_pdf)
-
 def extract_text_from_pdf(input_pdf):
     """
-    Extrait le texte d'un fichier PDF, y compris via OCR pour les pages scannées.
+    Extrait le texte d'un fichier PDF.
 
     Args:
         input_pdf (str): Chemin du fichier PDF.
