@@ -7,46 +7,42 @@ from reportlab.lib.pagesizes import letter
 
 def add_image_to_pdf(input_pdf, output_pdf, image_path):
     """
-    Ajoute une image en bas à droite de la première page d'un PDF, en petite taille et avec transparence.
+    Ajoute une image en bas à droite de chaque page d'un PDF, en petite taille et avec transparence.
 
     Args:
         input_pdf (str): Chemin du fichier PDF d'entrée.
         output_pdf (str): Chemin du fichier PDF de sortie.
         image_path (str): Chemin de l'image à insérer.
     """
-    temp_pdf = "temp.pdf"
+    temp_pdf = "temp_page.pdf"
 
-    # Crée un PDF temporaire avec l'image
-    c = canvas.Canvas(temp_pdf, pagesize=letter)
-    width, height = letter
-
-    # Réduction de la taille et positionnement en bas à droite
-    image_width = 200
-    image_height = 100
-    x_position = width - image_width - 10
-    y_position = 150
-    
-    # Transparence (créée via une multiplication de l'opacité sur le PDF complet)
-    c.setFillAlpha(0.5)
-    
-    c.drawImage(image_path, x_position, y_position, width=image_width, height=image_height, preserveAspectRatio=True, mask='auto')
-    c.save()
-
-    # Fusionne le PDF temporaire avec l'original
+    # Crée un PDF temporaire avec l'image sur chaque page
     reader = PdfReader(input_pdf)
     writer = PdfWriter()
 
-    # Ajoute l'image uniquement à la première page
-    page = reader.pages[0]
-    with open(temp_pdf, "rb") as temp_file:
-        temp_reader = PdfReader(temp_file)
-        overlay_page = temp_reader.pages[0]
-        page.merge_page(overlay_page)
-        writer.add_page(page)
+    for page in reader.pages:
+        # Crée une page temporaire avec la signature
+        c = canvas.Canvas(temp_pdf, pagesize=letter)
+        width, height = letter
 
-    # Ajoute les pages restantes
-    for i in range(1, len(reader.pages)):
-        writer.add_page(reader.pages[i])
+        # Réduction de la taille et positionnement en bas à droite
+        image_width = 200
+        image_height = 100
+        x_position = width - image_width - 10
+        y_position = 150
+
+        # Transparence (créée via une multiplication de l'opacité sur le PDF complet)
+        c.setFillAlpha(0.5)
+
+        c.drawImage(image_path, x_position, y_position, width=image_width, height=image_height, preserveAspectRatio=True, mask='auto')
+        c.save()
+
+        # Fusionne la page temporaire avec la page actuelle
+        with open(temp_pdf, "rb") as temp_file:
+            temp_reader = PdfReader(temp_file)
+            overlay_page = temp_reader.pages[0]
+            page.merge_page(overlay_page)
+            writer.add_page(page)
 
     with open(output_pdf, "wb") as output_file:
         writer.write(output_file)
@@ -102,7 +98,7 @@ def process_files_and_sign_documents(uploaded_files, keyword, image_path):
 
 def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
     """
-    Ajoute une signature (image) à un PDF si le fichier contient un mot-clé.
+    Ajoute une signature (image) à chaque page d'un PDF si le fichier contient un mot-clé.
 
     Args:
         input_pdf (str): Chemin du fichier PDF d'entrée.
