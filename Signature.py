@@ -1,11 +1,29 @@
 import os
 import zipfile
+import subprocess
 import streamlit as st
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from pdf2image import convert_from_path
 import pytesseract
+
+def install_poppler():
+    """
+    Tente d'installer Poppler automatiquement.
+    """
+    try:
+        if os.name == 'nt':
+            st.error("Veuillez installer Poppler manuellement sur Windows depuis https://github.com/oschwartz10612/poppler-windows")
+        elif os.system("which pdftocairo") != 0:
+            st.warning("Tentative d'installation de Poppler...")
+            os.system("sudo apt-get install -y poppler-utils")
+            if os.system("which pdftocairo") == 0:
+                st.success("Poppler a été installé avec succès.")
+            else:
+                st.error("Impossible d'installer Poppler automatiquement. Veuillez l'installer manuellement.")
+    except Exception as e:
+        st.error(f"Erreur lors de l'installation de Poppler : {e}")
 
 def add_image_to_pdf(input_pdf, output_pdf, image_path):
     """
@@ -154,6 +172,7 @@ search_keyword = st.text_input("Entrez le mot-clé à rechercher")
 signature_image = st.file_uploader("Téléchargez une image de signature", type=["png", "jpg", "jpeg"])
 
 if st.button("Lancer la signature"):
+    install_poppler()
     if uploaded_files and search_keyword and signature_image:
         # Vérifier si Poppler est installé
         poppler_installed = os.system("which pdftocairo") == 0
