@@ -28,13 +28,10 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
         width, height = letter
 
         # Réduction de la taille et positionnement en bas à droite
-        image_width = 150
-        image_height = 100
+        image_width = 100
+        image_height = 50
         x_position = width - image_width - 10
-        y_position = 150
-
-        # Transparence (créée via une multiplication de l'opacité sur le PDF complet)
-        c.setFillAlpha(0.5)
+        y_position = 10
 
         c.drawImage(image_path, x_position, y_position, width=image_width, height=image_height, preserveAspectRatio=True, mask='auto')
         c.save()
@@ -71,10 +68,13 @@ def extract_text_from_pdf(input_pdf):
         if page_text.strip():
             text += page_text
         else:
-            # Effectuer l'OCR sur la page si aucun texte n'est trouvé
-            images = convert_from_path(input_pdf, first_page=page_num + 1, last_page=page_num + 1, poppler_path='/usr/bin')
-            for image in images:
-                text += pytesseract.image_to_string(image)
+            try:
+                # Effectuer l'OCR sur la page si aucun texte n'est trouvé
+                images = convert_from_path(input_pdf, first_page=page_num + 1, last_page=page_num + 1, poppler_path='/usr/bin')
+                for image in images:
+                    text += pytesseract.image_to_string(image)
+            except Exception as e:
+                st.error(f"Erreur lors de l'extraction OCR : {e}")
 
     return text
 
@@ -155,33 +155,38 @@ signature_image = st.file_uploader("Téléchargez une image de signature", type=
 
 if st.button("Lancer la signature"):
     if uploaded_files and search_keyword and signature_image:
-        # Sauvegarde de l'image temporairement
-        image_path = f"temp_{signature_image.name}"
-        with open(image_path, "wb") as f:
-            f.write(signature_image.read())
-
-        modified_files = []
-
-        with st.spinner("Traitement en cours..."):
-            modified_files = process_files_and_sign_documents(uploaded_files, search_keyword, image_path)
-
-        if modified_files:
-            st.success(f"Les fichiers suivants ont été signés avec succès :")
-            for file_path in modified_files:
-                with open(file_path, "rb") as f:
-                    st.download_button(
-                        label=f"Télécharger {os.path.basename(file_path)}",
-                        data=f,
-                        file_name=os.path.basename(file_path),
-                        mime="application/pdf"
-                    )
+        # Vérifier si Poppler est installé
+        poppler_installed = os.system("which pdftocairo") == 0
+        if not poppler_installed:
+            st.error("Poppler n'est pas installé. Veuillez installer 'poppler-utils'.")
         else:
-            st.warning("Aucun fichier n'a été modifié.")
+            # Sauvegarde de l'image temporairement
+            image_path = f"temp_{signature_image.name}"
+            with open(image_path, "wb") as f:
+                f.write(signature_image.read())
 
-        # Nettoyage du fichier temporaire
-        os.remove(image_path)
-        for file_path in modified_files:
-            os.remove(file_path)
+            modified_files = []
+
+            with st.spinner("Traitement en cours..."):
+                modified_files = process_files_and_sign_documents(uploaded_files, search_keyword, image_path)
+
+            if modified_files:
+                st.success(f"Les fichiers suivants ont été signés avec succès :")
+                for file_path in modified_files:
+                    with open(file_path, "rb") as f:
+                        st.download_button(
+                            label=f"Télécharger {os.path.basename(file_path)}",
+                            data=f,
+                            file_name=os.path.basename(file_path),
+                            mime="application/pdf"
+                        )
+            else:
+                st.warning("Aucun fichier n'a été modifié.")
+
+            # Nettoyage du fichier temporaire
+            os.remove(image_path)
+            for file_path in modified_files:
+                os.remove(file_path)
     else:
         st.error("Veuillez fournir des fichiers ZIP ou PDF, un mot-clé et une image de signature.")
 
