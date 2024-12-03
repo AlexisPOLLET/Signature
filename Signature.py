@@ -27,7 +27,7 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
     y_position = 10
 
     c.drawImage(image_path, x_position, y_position, width=image_width, height=image_height, preserveAspectRatio=True, mask='auto')
-    c.save()
+    c.save(0.5)
 
     # Fusionne le PDF temporaire avec l'original
     reader = PdfReader(input_pdf)
