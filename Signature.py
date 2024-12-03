@@ -30,10 +30,13 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
         image_height = 50
         if rotation in [90, 270]:  # Page en mode paysage
             x_position = height - image_width - 10
-            y_position = 10
+            y_position = 150
         else:  # Page en mode portrait
             x_position = width - image_width - 10
-            y_position = 10
+            y_position = 150
+
+        # Transparence (créée via une multiplication de l'opacité sur le PDF complet)
+        c.setFillAlpha(0.5)
 
         # Créer une page temporaire avec la signature
         temp_pdf = f"temp_page_{page_num}.pdf"
