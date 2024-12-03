@@ -1,24 +1,21 @@
 import os
 import zipfile
 import streamlit as st
-from PyPDF2 import PdfReader, PdfWriter
+from PyPDF2 import PdfReader, PdfWriter, PageObject
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter, landscape
-from reportlab.lib.utils import ImageReader
-import fitz  # PyMuPDF
+from reportlab.lib.pagesizes import letter
 from PIL import Image
 
 def add_image_to_pdf(input_pdf, output_pdf, image_path):
     """
     Ajoute une image en bas à droite de chaque page d'un PDF, en petite taille, avec transparence.
-    La rotation de la signature est ajustée en fonction de l'orientation de la page.
 
     Args:
         input_pdf (str): Chemin du fichier PDF d'entrée.
         output_pdf (str): Chemin du fichier PDF de sortie.
         image_path (str): Chemin de l'image à insérer.
     """
-    doc = fitz.open(input_pdf)
+    reader = PdfReader(input_pdf)
     writer = PdfWriter()
 
     # Préparer l'image avec transparence
@@ -32,36 +29,29 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
     temp_image_path = "temp_transparent_image.png"
     transparent_image.save(temp_image_path, "PNG")
 
-    for page_num, page in enumerate(doc):
-        # Déterminer l'orientation de la page
-        rotation = page.rotation  # Rotation de la page en degrés
-        mediabox = page.rect
-        width, height = mediabox.width, mediabox.height
+    for page_num, page in enumerate(reader.pages):
+        packet = io.BytesIO()
+        can = canvas.Canvas(packet, pagesize=letter)
 
-        # Réduction de la taille et positionnement de l'image en fonction de l'orientation
+        # Déterminer la taille de la page
+        width = float(page.mediabox.width)
+        height = float(page.mediabox.height)
+
+        # Positionner l'image en bas à droite
         image_width = 100
         image_height = 50
-        if rotation in [90, 270]:  # Page en mode paysage
-            x_position = height - image_width - 10
-            y_position = 150
-        else:  # Page en mode portrait
-            x_position = width - image_width - 10
-            y_position = 150
+        x_position = width - image_width - 10
+        y_position = 10
 
-        # Créer une page temporaire avec la signature
-        temp_pdf = f"temp_page_{page_num}.pdf"
-        c = canvas.Canvas(temp_pdf, pagesize=(width, height) if rotation in [0, 180] else landscape((width, height)))
-        c.drawImage(temp_image_path, x_position, y_position, width=image_width, height=image_height, mask="auto")
-        c.save()
+        can.drawImage(temp_image_path, x_position, y_position, width=image_width, height=image_height, mask="auto")
+        can.save()
 
-        # Charger la page temporaire et fusionner avec la page originale
-        with open(temp_pdf, "rb") as temp_file:
-            temp_reader = PdfReader(temp_file)
-            overlay_page = temp_reader.pages[0]
-            writer.add_page(overlay_page)
-
-        # Supprimer le fichier temporaire après utilisation
-        os.remove(temp_pdf)
+        # Fusionner l'image avec la page originale
+        packet.seek(0)
+        new_pdf = PdfReader(packet)
+        overlay_page = new_pdf.pages[0]
+        page.merge_page(overlay_page)
+        writer.add_page(page)
 
     # Supprimer l'image temporaire
     os.remove(temp_image_path)
@@ -80,10 +70,10 @@ def extract_text_from_pdf(input_pdf):
         str: Texte extrait du PDF.
     """
     text = ""
-    doc = fitz.open(input_pdf)
+    reader = PdfReader(input_pdf)
 
-    for page in doc:
-        text += page.get_text()
+    for page in reader.pages:
+        text += page.extract_text()
 
     return text
 
@@ -156,7 +146,7 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
 st.title("Outil de signature automatique des documents PDF")
 
 st.write("**Instructions :** Vous pouvez téléverser plusieurs fichiers PDF ou une archive ZIP contenant des fichiers PDF.")
-st.code("pip install PyPDF2 reportlab pymupdf streamlit pillow")
+st.code("pip install PyPDF2 reportlab streamlit pillow")
 
 uploaded_files = st.file_uploader("Téléchargez des fichiers ZIP ou PDF", type=["zip", "pdf"], accept_multiple_files=True)
 search_keyword = st.text_input("Entrez le mot-clé à rechercher")
