@@ -2,7 +2,7 @@ import os
 import zipfile
 import streamlit as st
 from PyPDF2 import PdfReader, PdfWriter
-from reportlab.pdfgen import canvas, pdfgen
+from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.lib.utils import ImageReader
 import fitz  # PyMuPDF
