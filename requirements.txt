@@ -1,7 +1,6 @@
 streamlit
 PyPDF2
 reportlab
-pdf2image
+pymupdf
 pytesseract
-fitz
-PyMuPDF
+Pillow
