@@ -6,6 +6,8 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from PIL import Image
 from io import BytesIO
+from pdf2image import convert_from_path
+import pytesseract
 
 def add_image_to_pdf(input_pdf, output_pdf, image_path):
     """
@@ -42,7 +44,7 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
         image_width = 100
         image_height = 50
         x_position = width - image_width - 10
-        y_position = 150
+        y_position = 10
 
         can.drawImage(temp_image_path, x_position, y_position, width=image_width, height=image_height, mask="auto")
         can.save()
@@ -62,7 +64,7 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
 
 def extract_text_from_pdf(input_pdf):
     """
-    Extrait le texte d'un fichier PDF.
+    Extrait le texte d'un fichier PDF. Utilise l'OCR pour les pages scannées.
 
     Args:
         input_pdf (str): Chemin du fichier PDF.
@@ -71,10 +73,17 @@ def extract_text_from_pdf(input_pdf):
         str: Texte extrait du PDF.
     """
     text = ""
-    reader = PdfReader(input_pdf)
 
+    # Tenter d'extraire le texte directement
+    reader = PdfReader(input_pdf)
     for page in reader.pages:
         text += page.extract_text()
+
+    # Si aucun texte n'est extrait, utiliser l'OCR
+    if not text.strip():
+        images = convert_from_path(input_pdf)
+        for image in images:
+            text += pytesseract.image_to_string(image, lang="eng")
 
     return text
 
@@ -147,7 +156,7 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
 st.title("Outil de signature automatique des documents PDF")
 
 st.write("**Instructions :** Vous pouvez téléverser plusieurs fichiers PDF ou une archive ZIP contenant des fichiers PDF.")
-st.code("pip install PyPDF2 reportlab streamlit pillow")
+st.code("pip install PyPDF2 reportlab streamlit pillow pdf2image pytesseract")
 
 uploaded_files = st.file_uploader("Téléchargez des fichiers ZIP ou PDF", type=["zip", "pdf"], accept_multiple_files=True)
 search_keyword = st.text_input("Entrez le mot-clé à rechercher")
@@ -184,4 +193,5 @@ if st.button("Lancer la signature"):
             os.remove(file_path)
     else:
         st.error("Veuillez fournir des fichiers ZIP ou PDF, un mot-clé et une image de signature.")
+
 
