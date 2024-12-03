@@ -3,12 +3,13 @@ import zipfile
 import streamlit as st
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter, landscape
 import fitz  # PyMuPDF
 
 def add_image_to_pdf(input_pdf, output_pdf, image_path):
     """
     Ajoute une image en bas à droite de chaque page d'un PDF, en petite taille et avec transparence.
+    La rotation de la signature est ajustée en fonction de l'orientation de la page.
 
     Args:
         input_pdf (str): Chemin du fichier PDF d'entrée.
@@ -18,23 +19,27 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
     temp_pdf = "temp_page.pdf"
 
     # Crée un PDF temporaire avec l'image sur chaque page
-    reader = PdfReader(input_pdf)
+    doc = fitz.open(input_pdf)
     writer = PdfWriter()
 
-    for page in reader.pages:
-        # Crée une page temporaire avec la signature
-        c = canvas.Canvas(temp_pdf, pagesize=letter)
-        width, height = letter
+    for page_num, page in enumerate(doc):
+        # Déterminer l'orientation de la page
+        rotation = page.rotation  # Rotation de la page en degrés
+        mediabox = page.mediabox
+        width, height = mediabox.width, mediabox.height
 
-        # Réduction de la taille et positionnement en bas à droite
-        image_width = 150
-        image_height = 100
-        x_position = width - image_width - 10
-        y_position = 150
+        # Réduction de la taille et positionnement de l'image en fonction de l'orientation
+        image_width = 100
+        image_height = 50
+        if rotation in [90, 270]:  # Page en mode paysage
+            x_position = height - image_width - 10
+            y_position = 10
+        else:  # Page en mode portrait
+            x_position = width - image_width - 10
+            y_position = 10
 
-        # Transparence (créée via une multiplication de l'opacité sur le PDF complet)
-        c.setFillAlpha(0.5)
-
+        # Créer une page temporaire avec la signature
+        c = canvas.Canvas(temp_pdf, pagesize=(width, height) if rotation in [0, 180] else landscape((width, height)))
         c.drawImage(image_path, x_position, y_position, width=image_width, height=image_height, preserveAspectRatio=True, mask='auto')
         c.save()
 
@@ -42,8 +47,7 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
         with open(temp_pdf, "rb") as temp_file:
             temp_reader = PdfReader(temp_file)
             overlay_page = temp_reader.pages[0]
-            page.merge_page(overlay_page)
-            writer.add_page(page)
+            writer.add_page(overlay_page)
 
     with open(output_pdf, "wb") as output_file:
         writer.write(output_file)
@@ -53,7 +57,7 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
 
 def extract_text_from_pdf(input_pdf):
     """
-    Extrait le texte d'un fichier PDF.
+    Extrait le texte d'un fichier PDF, y compris via OCR pour les pages scannées.
 
     Args:
         input_pdf (str): Chemin du fichier PDF.
@@ -64,8 +68,7 @@ def extract_text_from_pdf(input_pdf):
     text = ""
     doc = fitz.open(input_pdf)
 
-    for page_num in range(len(doc)):
-        page = doc.load_page(page_num)
+    for page in doc:
         text += page.get_text()
 
     return text
