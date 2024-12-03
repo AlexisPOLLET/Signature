@@ -84,7 +84,7 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
 # Interface utilisateur Streamlit
 st.title("Outil de signature automatique des documents PDF")
 
-pdf_directory = st.file_uploader("Téléchargez le dossier contenant les fichiers PDF", type="directory")
+pdf_directory = st.text_input("Entrez le chemin du répertoire contenant les fichiers PDF", value=".")
 search_keyword = st.text_input("Entrez le mot-clé à rechercher")
 signature_image = st.file_uploader("Téléchargez une image de signature", type=["png", "jpg", "jpeg"])
 
