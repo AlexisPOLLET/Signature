@@ -43,7 +43,7 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
         image_width = 100
         image_height = 50
         x_position = width - image_width - 10
-        y_position = 10
+        y_position = 150
 
         can.drawImage(temp_image_path, x_position, y_position, width=image_width, height=image_height, mask="auto")
         can.save()
