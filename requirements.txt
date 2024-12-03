@@ -1,8 +1,3 @@
-streamlit
-PyPDF2
-PdfReader
-PdfWriter
-reportlab.pdfgen
-canvas
-reportlab.lib.pagesizes
-letter
+PyPDF2==2.12.1
+reportlab==3.6.12
+streamlit==1.21.0
