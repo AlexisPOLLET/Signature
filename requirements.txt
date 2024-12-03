@@ -1,7 +1,7 @@
 os
 streamlit
 PyPDF2
-PdfReader*
+PdfReader
 PdfWriter
 reportlab.pdfgen
 canvas
