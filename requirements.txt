@@ -2,5 +2,5 @@ streamlit
 PyPDF2
 reportlab
 pymupdf
-pytesseract
-Pillow
+pillow
+canvas
