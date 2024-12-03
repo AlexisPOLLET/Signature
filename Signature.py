@@ -2,13 +2,15 @@ import os
 import zipfile
 import streamlit as st
 from PyPDF2 import PdfReader, PdfWriter
-from reportlab.pdfgen import canvas
+from reportlab.pdfgen import canvas, pdfgen
 from reportlab.lib.pagesizes import letter, landscape
+from reportlab.lib.utils import ImageReader
 import fitz  # PyMuPDF
+from PIL import Image
 
 def add_image_to_pdf(input_pdf, output_pdf, image_path):
     """
-    Ajoute une image en bas à droite de chaque page d'un PDF, en petite taille.
+    Ajoute une image en bas à droite de chaque page d'un PDF, en petite taille, avec transparence.
     La rotation de la signature est ajustée en fonction de l'orientation de la page.
 
     Args:
@@ -18,6 +20,17 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
     """
     doc = fitz.open(input_pdf)
     writer = PdfWriter()
+
+    # Préparer l'image avec transparence
+    image = Image.open(image_path).convert("RGBA")
+    alpha = 128  # Transparence : 0 (totalement transparent) à 255 (opaque)
+    transparent_image = Image.new("RGBA", image.size, (255, 255, 255, 0))
+    for x in range(image.width):
+        for y in range(image.height):
+            r, g, b, a = image.getpixel((x, y))
+            transparent_image.putpixel((x, y), (r, g, b, int(a * (alpha / 255.0))))
+    temp_image_path = "temp_transparent_image.png"
+    transparent_image.save(temp_image_path, "PNG")
 
     for page_num, page in enumerate(doc):
         # Déterminer l'orientation de la page
@@ -30,16 +43,15 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
         image_height = 50
         if rotation in [90, 270]:  # Page en mode paysage
             x_position = height - image_width - 10
-            y_position = 150
+            y_position = 10
         else:  # Page en mode portrait
             x_position = width - image_width - 10
-            y_position = 150
-
+            y_position = 10
 
         # Créer une page temporaire avec la signature
         temp_pdf = f"temp_page_{page_num}.pdf"
         c = canvas.Canvas(temp_pdf, pagesize=(width, height) if rotation in [0, 180] else landscape((width, height)))
-        c.drawImage(image_path, x_position, y_position, width=image_width, height=image_height, preserveAspectRatio=True, mask='auto')
+        c.drawImage(temp_image_path, x_position, y_position, width=image_width, height=image_height, mask="auto")
         c.save()
 
         # Fusionne la page temporaire avec la page actuelle
@@ -50,6 +62,9 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
 
         # Supprime le fichier temporaire après utilisation
         os.remove(temp_pdf)
+
+    # Supprimer l'image temporaire
+    os.remove(temp_image_path)
 
     with open(output_pdf, "wb") as output_file:
         writer.write(output_file)
@@ -141,7 +156,7 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
 st.title("Outil de signature automatique des documents PDF")
 
 st.write("**Instructions :** Vous pouvez téléverser plusieurs fichiers PDF ou une archive ZIP contenant des fichiers PDF.")
-st.code("pip install PyPDF2 reportlab pymupdf streamlit")
+st.code("pip install PyPDF2 reportlab pymupdf streamlit pillow")
 
 uploaded_files = st.file_uploader("Téléchargez des fichiers ZIP ou PDF", type=["zip", "pdf"], accept_multiple_files=True)
 search_keyword = st.text_input("Entrez le mot-clé à rechercher")
@@ -178,4 +193,3 @@ if st.button("Lancer la signature"):
             os.remove(file_path)
     else:
         st.error("Veuillez fournir des fichiers ZIP ou PDF, un mot-clé et une image de signature.")
-
