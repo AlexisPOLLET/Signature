@@ -1,29 +1,11 @@
 import os
 import zipfile
-import subprocess
 import streamlit as st
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from pdf2image import convert_from_path
+import fitz  # PyMuPDF
 import pytesseract
-
-def install_poppler():
-    """
-    Tente d'installer Poppler automatiquement.
-    """
-    try:
-        if os.name == 'nt':
-            st.error("Veuillez installer Poppler manuellement sur Windows depuis https://github.com/oschwartz10612/poppler-windows")
-        elif os.system("which pdftocairo") != 0:
-            st.warning("Tentative d'installation de Poppler...")
-            os.system("sudo apt-get install -y poppler-utils")
-            if os.system("which pdftocairo") == 0:
-                st.success("Poppler a été installé avec succès.")
-            else:
-                st.error("Impossible d'installer Poppler automatiquement. Veuillez l'installer manuellement.")
-    except Exception as e:
-        st.error(f"Erreur lors de l'installation de Poppler : {e}")
 
 def add_image_to_pdf(input_pdf, output_pdf, image_path):
     """
@@ -78,21 +60,18 @@ def extract_text_from_pdf(input_pdf):
         str: Texte extrait du PDF.
     """
     text = ""
-    reader = PdfReader(input_pdf)
+    doc = fitz.open(input_pdf)
 
-    for page_num, page in enumerate(reader.pages):
-        # Extraire le texte de la page
-        page_text = page.extract_text()
+    for page_num in range(len(doc)):
+        page = doc.load_page(page_num)
+        page_text = page.get_text()
         if page_text.strip():
             text += page_text
         else:
-            try:
-                # Effectuer l'OCR sur la page si aucun texte n'est trouvé
-                images = convert_from_path(input_pdf, first_page=page_num + 1, last_page=page_num + 1, poppler_path='/usr/bin')
-                for image in images:
-                    text += pytesseract.image_to_string(image)
-            except Exception as e:
-                st.error(f"Erreur lors de l'extraction OCR : {e}")
+            # Effectuer l'OCR sur l'image de la page si aucun texte n'est trouvé
+            pix = page.get_pixmap()
+            image = fitz.Pixmap(pix, 0) if pix.alpha else pix
+            text += pytesseract.image_to_string(image.tobytes(), lang="eng")
 
     return text
 
@@ -165,55 +144,40 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
 st.title("Outil de signature automatique des documents PDF")
 
 st.write("**Instructions :** Vous pouvez téléverser plusieurs fichiers PDF ou une archive ZIP contenant des fichiers PDF.")
-st.code("pip install PyPDF2 reportlab pdf2image pytesseract streamlit")
+st.code("pip install PyPDF2 reportlab pymupdf pytesseract streamlit")
 
 uploaded_files = st.file_uploader("Téléchargez des fichiers ZIP ou PDF", type=["zip", "pdf"], accept_multiple_files=True)
 search_keyword = st.text_input("Entrez le mot-clé à rechercher")
 signature_image = st.file_uploader("Téléchargez une image de signature", type=["png", "jpg", "jpeg"])
 
 if st.button("Lancer la signature"):
-    install_poppler()
     if uploaded_files and search_keyword and signature_image:
-        # Vérifier si Poppler est installé
-        poppler_installed = os.system("which pdftocairo") == 0
-        if not poppler_installed:
-            st.error("Poppler n'est pas installé. Veuillez installer 'poppler-utils'.")
-        else:
-            # Sauvegarde de l'image temporairement
-            image_path = f"temp_{signature_image.name}"
-            with open(image_path, "wb") as f:
-                f.write(signature_image.read())
+        # Sauvegarde de l'image temporairement
+        image_path = f"temp_{signature_image.name}"
+        with open(image_path, "wb") as f:
+            f.write(signature_image.read())
 
-            modified_files = []
+        modified_files = []
 
-            with st.spinner("Traitement en cours..."):
-                modified_files = process_files_and_sign_documents(uploaded_files, search_keyword, image_path)
+        with st.spinner("Traitement en cours..."):
+            modified_files = process_files_and_sign_documents(uploaded_files, search_keyword, image_path)
 
-            if modified_files:
-                st.success(f"Les fichiers suivants ont été signés avec succès :")
-                for file_path in modified_files:
-                    with open(file_path, "rb") as f:
-                        st.download_button(
-                            label=f"Télécharger {os.path.basename(file_path)}",
-                            data=f,
-                            file_name=os.path.basename(file_path),
-                            mime="application/pdf"
-                        )
-            else:
-                st.warning("Aucun fichier n'a été modifié.")
-
-            # Nettoyage du fichier temporaire
-            os.remove(image_path)
+        if modified_files:
+            st.success(f"Les fichiers suivants ont été signés avec succès :")
             for file_path in modified_files:
-                os.remove(file_path)
+                with open(file_path, "rb") as f:
+                    st.download_button(
+                        label=f"Télécharger {os.path.basename(file_path)}",
+                        data=f,
+                        file_name=os.path.basename(file_path),
+                        mime="application/pdf"
+                    )
+        else:
+            st.warning("Aucun fichier n'a été modifié.")
+
+        # Nettoyage du fichier temporaire
+        os.remove(image_path)
+        for file_path in modified_files:
+            os.remove(file_path)
     else:
         st.error("Veuillez fournir des fichiers ZIP ou PDF, un mot-clé et une image de signature.")
-
-# Gestion des erreurs pour les bibliothèques manquantes
-try:
-    import PyPDF2
-    from reportlab.pdfgen import canvas
-    from pdf2image import convert_from_path
-    import pytesseract
-except ImportError as e:
-    st.error(f"Erreur d'importation des bibliothèques : {str(e)}. Veuillez installer les dépendances indiquées ci-dessus.")
