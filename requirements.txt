@@ -1,2 +1,9 @@
 os
 streamlit
+PyPDF2
+PdfReader*
+PdfWriter
+reportlab.pdfgen
+canvas
+reportlab.lib.pagesizes
+letter
