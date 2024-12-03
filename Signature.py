@@ -4,7 +4,6 @@ import streamlit as st
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
 
 def add_image_to_pdf(input_pdf, output_pdf, image_path):
     """
@@ -22,13 +21,10 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
     width, height = letter
 
     # Réduction de la taille et positionnement en bas à droite
-    image_width = 200
-    image_height = 100
+    image_width = 100
+    image_height = 50
     x_position = width - image_width - 10
-    y_position = 250
-
-    # Transparence (créée via une multiplication de l'opacité sur le PDF complet)
-    c.setFillAlpha(0.5)
+    y_position = 10
 
     c.drawImage(image_path, x_position, y_position, width=image_width, height=image_height, preserveAspectRatio=True, mask='auto')
     c.save()
@@ -55,12 +51,12 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
     # Supprime le fichier temporaire
     os.remove(temp_pdf)
 
-def process_zip_and_sign_documents(zip_path, keyword, image_path):
+def process_files_and_sign_documents(uploaded_files, keyword, image_path):
     """
-    Traite un fichier ZIP contenant des fichiers PDF et ajoute une signature (image) à ceux qui contiennent un mot-clé.
+    Traite les fichiers PDF ou les archives ZIP téléversées et ajoute une signature (image) à ceux qui contiennent un mot-clé.
 
     Args:
-        zip_path (str): Chemin de l'archive ZIP.
+        uploaded_files (list): Liste des fichiers téléversés (PDF ou ZIP).
         keyword (str): Mot-clé à rechercher dans les fichiers.
         image_path (str): Chemin de l'image à insérer.
 
@@ -68,20 +64,36 @@ def process_zip_and_sign_documents(zip_path, keyword, image_path):
         list: Liste des fichiers modifiés.
     """
     modified_files = []
-    extract_dir = "temp_extracted"
+    for uploaded_file in uploaded_files:
+        file_name = uploaded_file.name
+        temp_path = f"temp_{file_name}"
 
-    # Extraire le contenu du ZIP
-    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-        zip_ref.extractall(extract_dir)
+        # Sauvegarde temporaire
+        with open(temp_path, "wb") as f:
+            f.write(uploaded_file.read())
 
-    # Parcourir les fichiers extraits
-    for root, _, files in os.walk(extract_dir):
-        for file in files:
-            if file.endswith(".pdf"):
-                file_path = os.path.join(root, file)
-                output_path = file_path.replace(".pdf", "_signed.pdf")
-                if search_and_add_signature(file_path, output_path, keyword, image_path):
-                    modified_files.append(output_path)
+        if file_name.endswith(".zip"):
+            # Traiter l'archive ZIP
+            with zipfile.ZipFile(temp_path, 'r') as zip_ref:
+                extract_dir = f"temp_extracted_{file_name}"
+                zip_ref.extractall(extract_dir)
+
+                for root, _, files in os.walk(extract_dir):
+                    for file in files:
+                        if file.endswith(".pdf"):
+                            pdf_path = os.path.join(root, file)
+                            output_path = pdf_path.replace(".pdf", "_signed.pdf")
+                            if search_and_add_signature(pdf_path, output_path, keyword, image_path):
+                                modified_files.append(output_path)
+
+        elif file_name.endswith(".pdf"):
+            # Traiter les fichiers PDF individuels
+            output_path = temp_path.replace(".pdf", "_signed.pdf")
+            if search_and_add_signature(temp_path, output_path, keyword, image_path):
+                modified_files.append(output_path)
+
+        # Supprime le fichier temporaire
+        os.remove(temp_path)
 
     return modified_files
 
@@ -108,34 +120,24 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
 # Interface utilisateur Streamlit
 st.title("Outil de signature automatique des documents PDF")
 
-st.write("**Instructions :** Vous pouvez téléverser un fichier ZIP contenant des fichiers PDF ou un fichier PDF unique.")
+st.write("**Instructions :** Vous pouvez téléverser plusieurs fichiers PDF ou une archive ZIP contenant des fichiers PDF.")
 st.code("pip install PyPDF2 reportlab streamlit")
 
-uploaded_file = st.file_uploader("Téléchargez un fichier ZIP ou PDF", type=["zip", "pdf"])
+uploaded_files = st.file_uploader("Téléchargez des fichiers ZIP ou PDF", type=["zip", "pdf"], accept_multiple_files=True)
 search_keyword = st.text_input("Entrez le mot-clé à rechercher")
 signature_image = st.file_uploader("Téléchargez une image de signature", type=["png", "jpg", "jpeg"])
 
 if st.button("Lancer la signature"):
-    if uploaded_file and search_keyword and signature_image:
-        # Sauvegarde des fichiers temporairement
-        input_path = f"temp_{uploaded_file.name}"
+    if uploaded_files and search_keyword and signature_image:
+        # Sauvegarde de l'image temporairement
         image_path = f"temp_{signature_image.name}"
-
-        with open(input_path, "wb") as f:
-            f.write(uploaded_file.read())
-
         with open(image_path, "wb") as f:
             f.write(signature_image.read())
 
         modified_files = []
 
         with st.spinner("Traitement en cours..."):
-            if uploaded_file.name.endswith(".zip"):
-                modified_files = process_zip_and_sign_documents(input_path, search_keyword, image_path)
-            elif uploaded_file.name.endswith(".pdf"):
-                output_path = input_path.replace(".pdf", "_signed.pdf")
-                if search_and_add_signature(input_path, output_path, search_keyword, image_path):
-                    modified_files.append(output_path)
+            modified_files = process_files_and_sign_documents(uploaded_files, search_keyword, image_path)
 
         if modified_files:
             st.success(f"Les fichiers suivants ont été signés avec succès :")
@@ -150,13 +152,12 @@ if st.button("Lancer la signature"):
         else:
             st.warning("Aucun fichier n'a été modifié.")
 
-        # Nettoyage des fichiers temporaires
-        os.remove(input_path)
+        # Nettoyage du fichier temporaire
         os.remove(image_path)
         for file_path in modified_files:
             os.remove(file_path)
     else:
-        st.error("Veuillez fournir un fichier ZIP ou PDF, un mot-clé et une image de signature.")
+        st.error("Veuillez fournir des fichiers ZIP ou PDF, un mot-clé et une image de signature.")
 
 # Gestion des erreurs pour les bibliothèques manquantes
 try:
