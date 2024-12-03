@@ -4,3 +4,4 @@ reportlab
 pdf2image
 pytesseract
 fitz
+PyMuPDF
