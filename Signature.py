@@ -5,14 +5,6 @@ from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import fitz  # PyMuPDF
-import pytesseract
-from PIL import Image
-import io
-
-# Configure le chemin de Tesseract si nécessaire
-if os.name == 'nt':  # Windows
-    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-
 
 def add_image_to_pdf(input_pdf, output_pdf, image_path):
     """
@@ -58,7 +50,7 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
 
 def extract_text_from_pdf(input_pdf):
     """
-    Extrait le texte d'un fichier PDF, y compris via OCR pour les pages scannées.
+    Extrait le texte d'un fichier PDF.
 
     Args:
         input_pdf (str): Chemin du fichier PDF.
@@ -71,14 +63,7 @@ def extract_text_from_pdf(input_pdf):
 
     for page_num in range(len(doc)):
         page = doc.load_page(page_num)
-        page_text = page.get_text()
-        if page_text.strip():
-            text += page_text
-        else:
-            # Effectuer l'OCR sur l'image de la page si aucun texte n'est trouvé
-            pix = page.get_pixmap()
-            image = Image.open(io.BytesIO(pix.tobytes("png")))  # Convertir Pixmap en image PIL
-            text += pytesseract.image_to_string(image, lang="eng")
+        text += page.get_text()
 
     return text
 
@@ -151,7 +136,7 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
 st.title("Outil de signature automatique des documents PDF")
 
 st.write("**Instructions :** Vous pouvez téléverser plusieurs fichiers PDF ou une archive ZIP contenant des fichiers PDF.")
-st.code("pip install PyPDF2 reportlab pymupdf pytesseract pillow streamlit")
+st.code("pip install PyPDF2 reportlab pymupdf streamlit")
 
 uploaded_files = st.file_uploader("Téléchargez des fichiers ZIP ou PDF", type=["zip", "pdf"], accept_multiple_files=True)
 search_keyword = st.text_input("Entrez le mot-clé à rechercher")
