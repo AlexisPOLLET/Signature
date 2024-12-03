@@ -1,5 +1,3 @@
-pip uninstall streamlit
-pip install streamlit
 import os
 import streamlit as st
 from PyPDF2 import PdfReader, PdfWriter
