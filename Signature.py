@@ -38,10 +38,10 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path, position="bottom-right")
         image_width = 100
         image_height = 50
 
-        if position == "En bas à droite":
+        if position == "bottom-right":
             x_position = width - image_width - -10
             y_position = 150
-        elif position == "En bas à gauche":
+        elif position == "bottom-left":
             x_position = -10
             y_position = 150
         else:
@@ -154,7 +154,7 @@ st.code("pip install PyPDF2 reportlab streamlit pillow pymupdf")
 uploaded_files = st.file_uploader("Téléchargez des fichiers ZIP ou PDF", type=["zip", "pdf"], accept_multiple_files=True)
 search_keyword = st.text_input("Entrez le mot-clé à rechercher")
 signature_image = st.file_uploader("Téléchargez une image de signature", type=["png", "jpg", "jpeg"])
-position = st.radio("Choisissez la position de la signature :", ["bottom-right", "bottom-left"])
+position = st.radio("Choisissez la position de la signature :", ["En bas à Droite", "En bas à Gauche"])
 
 if st.button("Lancer la signature"):
     if uploaded_files and search_keyword and signature_image:
