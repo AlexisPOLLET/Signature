@@ -35,15 +35,15 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path, position="bottom-right")
 
         # Définir la position de la signature
         width, height = page.rect.width, page.rect.height
-        image_width = 200
-        image_height = 100
+        image_width = 100
+        image_height = 50
 
         if position == "bottom-right":
-            x_position = width - image_width - 50
-            y_position = height - image_height - 150
+            x_position = width - image_width - 10
+            y_position = 10
         elif position == "bottom-left":
-            x_position = 50
-            y_position = height - image_height - 150
+            x_position = 10
+            y_position = 10
         else:
             raise ValueError("Position non prise en charge. Utilisez 'bottom-right' ou 'bottom-left'.")
 
@@ -80,7 +80,7 @@ def extract_text_from_pdf(input_pdf):
 
 def process_files_and_sign_documents(uploaded_files, keyword, image_path, position):
     """
-    Traite les fichiers PDF ou les archives ZIP téléversées et ajoute une signature (image) à ceux qui contiennent un mot-clé.
+    Traite les fichiers PDF ou les archives ZIP téléversées et ajoute une signature (image) à ceux qui contiennent un mot-clé ou aux fichiers sans texte détectable.
 
     Args:
         uploaded_files (list): Liste des fichiers téléversés (PDF ou ZIP).
@@ -127,7 +127,7 @@ def process_files_and_sign_documents(uploaded_files, keyword, image_path, positi
 
 def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, position):
     """
-    Ajoute une signature (image) à chaque page d'un PDF uniquement si le fichier contient un mot-clé.
+    Ajoute une signature (image) à chaque page d'un PDF, même si aucun texte n'est détectable.
 
     Args:
         input_pdf (str): Chemin du fichier PDF d'entrée.
@@ -140,7 +140,7 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, positio
         bool: True si le fichier a été modifié, False sinon.
     """
     text = extract_text_from_pdf(input_pdf)
-    if keyword in text:
+    if keyword in text or not text.strip():
         add_image_to_pdf(input_pdf, output_pdf, image_path, position)
         return True
     return False
