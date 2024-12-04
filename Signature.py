@@ -40,8 +40,8 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
         height = float(page.mediabox.height)
 
         # Positionner l'image en bas à droite
-        image_width = 150
-        image_height = 100
+        image_width = 100
+        image_height = 50
         x_position = width - image_width - 10
         y_position = 150
 
