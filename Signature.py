@@ -35,18 +35,18 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path, position="bottom-right")
 
         # Définir la position de la signature
         width, height = page.rect.width, page.rect.height
-        image_width = 200
-        image_height = 100
+        image_width = 100
+        image_height = 50
 
         if position == "bottom-right":
-            x_position = width - image_width - 50
-            y_position = height - image_height - 150
+            x_position = width - image_width - 10
+            y_position = 10
         elif position == "bottom-left":
-            x_position = 50
-            y_position = height - image_height - 150
+            x_position = 10
+            y_position = 10
         else:
             raise ValueError("Position non prise en charge. Utilisez 'bottom-right' ou 'bottom-left'.")
-            
+
         # Ajouter l'image sur la page
         page.insert_image(
             fitz.Rect(x_position, y_position, x_position + image_width, y_position + image_height),
@@ -187,3 +187,4 @@ if st.button("Lancer la signature"):
             os.remove(file_path)
     else:
         st.error("Veuillez fournir des fichiers ZIP ou PDF, un mot-clé et une image de signature.")
+
