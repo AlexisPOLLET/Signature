@@ -201,10 +201,6 @@ if st.button("Lancer la signature"):
             st.download_button(
                 label="Télécharger tous les fichiers signés (ZIP)",
                 data=zip_buffer,
-                file_name="fichiers_signes
-                            st.download_button(
-                label="Télécharger tous les fichiers signés (ZIP)",
-                data=zip_buffer,
                 file_name="fichiers_signes.zip",
                 mime="application/zip"
             )
