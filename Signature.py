@@ -219,7 +219,7 @@ st.code("pip install PyPDF2 reportlab streamlit pillow pymupdf")
 uploaded_files = st.file_uploader("Téléchargez des fichiers ZIP ou PDF", type=["zip", "pdf"], accept_multiple_files=True)
 search_keyword = st.text_input("Entrez le mot-clé à rechercher")
 signature_image = st.file_uploader("Téléchargez une image de signature", type=["png", "jpg", "jpeg"])
-position = st.radio("Choisissez la position de la signature :", ["En bas à Droite", "En bas à Gauche"])
+position = st.radio("Choisissez la position de la signature :", ["bottom-right", "bottom-left"])
 include_images = st.checkbox("Signer les fichiers contenant uniquement des images")
 
 if st.button("Lancer la signature"):
