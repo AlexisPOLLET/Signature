@@ -74,7 +74,7 @@ def add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position="bo
     alpha = 128  # Transparence
 
     # Appliquer une rotation de 90 degrés
-    rotated_image = image.rotate(90, expand=True)
+    rotated_image = image.rotate(-90, expand=True)
     transparent_image = Image.new("RGBA", rotated_image.size, (255, 255, 255, 0))
     for x in range(rotated_image.width):
         for y in range(rotated_image.height):
