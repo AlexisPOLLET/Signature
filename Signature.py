@@ -8,9 +8,9 @@ from PIL import Image
 from io import BytesIO
 import fitz  # PyMuPDF
 
-def add_image_to_pdf(input_pdf, output_pdf, image_path, position="bottom-right"):
+def add_image_to_pdf_with_text(input_pdf, output_pdf, image_path, position="bottom-right"):
     """
-    Ajoute une image en bas de chaque page d'un PDF, en petite taille, avec transparence.
+    Ajoute une image en bas de chaque page d'un PDF contenant du texte.
 
     Args:
         input_pdf (str): Chemin du fichier PDF d'entrée.
@@ -20,7 +20,7 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path, position="bottom-right")
     """
     pdf_document = fitz.open(input_pdf)
     image = Image.open(image_path).convert("RGBA")
-    alpha = 128  # Transparence : 0 (totalement transparent) à 255 (opaque)
+    alpha = 128  # Transparence
 
     transparent_image = Image.new("RGBA", image.size, (255, 255, 255, 0))
     for x in range(image.width):
@@ -33,7 +33,7 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path, position="bottom-right")
     for page_num in range(len(pdf_document)):
         page = pdf_document[page_num]
 
-        # Définir la position de la signature
+        # Définir la position de la signature pour les PDF avec texte
         width, height = page.rect.width, page.rect.height
         image_width = 100
         image_height = 50
@@ -44,6 +44,57 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path, position="bottom-right")
         elif position == "bottom-left":
             x_position = 10
             y_position = height - image_height - 10
+        else:
+            raise ValueError("Position non prise en charge. Utilisez 'bottom-right' ou 'bottom-left'.")
+
+        # Ajouter l'image sur la page
+        page.insert_image(
+            fitz.Rect(x_position, y_position, x_position + image_width, y_position + image_height),
+            filename=temp_image_path
+        )
+
+    pdf_document.save(output_pdf)
+    pdf_document.close()
+
+    # Supprimer l'image temporaire
+    os.remove(temp_image_path)
+
+def add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position="bottom-right"):
+    """
+    Ajoute une image en bas de chaque page d'un PDF contenant uniquement des images.
+
+    Args:
+        input_pdf (str): Chemin du fichier PDF d'entrée.
+        output_pdf (str): Chemin du fichier PDF de sortie.
+        image_path (str): Chemin de l'image à insérer.
+        position (str): Position de la signature ("bottom-right" ou "bottom-left").
+    """
+    pdf_document = fitz.open(input_pdf)
+    image = Image.open(image_path).convert("RGBA")
+    alpha = 128  # Transparence
+
+    transparent_image = Image.new("RGBA", image.size, (255, 255, 255, 0))
+    for x in range(image.width):
+        for y in range(image.height):
+            r, g, b, a = image.getpixel((x, y))
+            transparent_image.putpixel((x, y), (r, g, b, int(a * (alpha / 255.0))))
+    temp_image_path = "temp_transparent_image.png"
+    transparent_image.save(temp_image_path, "PNG")
+
+    for page_num in range(len(pdf_document)):
+        page = pdf_document[page_num]
+
+        # Définir la position de la signature pour les PDF avec images uniquement
+        width, height = page.rect.width, page.rect.height
+        image_width = 150
+        image_height = 75
+
+        if position == "bottom-right":
+            x_position = width - image_width - 20
+            y_position = 20
+        elif position == "bottom-left":
+            x_position = 20
+            y_position = 20
         else:
             raise ValueError("Position non prise en charge. Utilisez 'bottom-right' ou 'bottom-left'.")
 
@@ -148,9 +199,12 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, positio
     text = extract_text_from_pdf(input_pdf)
 
     # Ajouter la signature si le mot-clé est présent ou si le PDF contient uniquement des images
-    if keyword in text or (include_images and not text.strip()):
-        add_image_to_pdf(input_pdf, output_pdf, image_path, position)
+    if keyword in text:
+        add_image_to_pdf_with_text(input_pdf, output_pdf, image_path, position)
         return True
+    elif include_images and not text.strip():
+        add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position)
+               return True
 
     return False
 
@@ -201,7 +255,6 @@ if st.button("Lancer la signature"):
                 data=zip_buffer,
                 file_name="fichiers_signes.zip",
                 mime="application/zip"
-
             )
         else:
             st.warning("Aucun fichier n'a été modifié.")
