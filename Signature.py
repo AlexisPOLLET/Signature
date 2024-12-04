@@ -202,7 +202,7 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, positio
 
     # Ajouter la signature si le mot-clé est présent ou si le PDF contient uniquement des images
     if keyword in text:
-        add_image_to_pdf_with_text(input_pdf, output_pdf, image_path, position
+        add_image_to_pdf_with_text(input_pdf, output_pdf, image_path, position)
         return True
     elif include_images and not text.strip():
         add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position)
