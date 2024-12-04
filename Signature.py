@@ -156,6 +156,11 @@ if st.button("Lancer la signature"):
 
         with st.spinner("Traitement en cours..."):
             modified_files = process_files_and_sign_documents(uploaded_files, search_keyword, image_path)
+            
+        if not text.strip():
+        st.warning(f"Le fichier {input_pdf} ne contient pas de texte détectable, mais il sera signé en bas à droite.")
+        add_image_to_pdf(input_pdf, output_pdf, image_path)
+        return True
 
         if modified_files:
             st.success(f"Les fichiers suivants ont été signés avec succès :")
