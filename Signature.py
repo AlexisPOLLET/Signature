@@ -141,6 +141,10 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, positio
     Returns:
         bool: True si le fichier a été modifié, False sinon.
     """
+    # Réinitialiser le fichier de sortie s'il existe déjà
+    if os.path.exists(output_pdf):
+        os.remove(output_pdf)
+
     text = extract_text_from_pdf(input_pdf)
 
     # Ajouter la signature si le mot-clé est présent ou si le PDF contient uniquement des images
@@ -203,3 +207,7 @@ if st.button("Lancer la signature"):
 
         # Nettoyage des fichiers temporaires
         os.remove(image_path)
+        for file_path in modified_files:
+            os.remove(file_path)
+    else:
+        st.error("Veuillez fournir des fichiers ZIP ou PDF et une image de signature.")
