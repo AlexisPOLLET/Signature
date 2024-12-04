@@ -10,19 +10,17 @@ import fitz  # PyMuPDF
 
 def add_image_to_pdf(input_pdf, output_pdf, image_path):
     """
-    Ajoute une image en bas à droite de chaque page d'un PDF, en petite taille, avec transparence.
+    Ajoute une image dans une zone blanche de chaque page d'un PDF, en petite taille, avec transparence.
 
     Args:
         input_pdf (str): Chemin du fichier PDF d'entrée.
         output_pdf (str): Chemin du fichier PDF de sortie.
         image_path (str): Chemin de l'image à insérer.
     """
-    reader = PdfReader(input_pdf)
-    writer = PdfWriter()
-
-    # Préparer l'image avec transparence
+    pdf_document = fitz.open(input_pdf)
     image = Image.open(image_path).convert("RGBA")
     alpha = 128  # Transparence : 0 (totalement transparent) à 255 (opaque)
+
     transparent_image = Image.new("RGBA", image.size, (255, 255, 255, 0))
     for x in range(image.width):
         for y in range(image.height):
@@ -31,35 +29,27 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path):
     temp_image_path = "temp_transparent_image.png"
     transparent_image.save(temp_image_path, "PNG")
 
-    for page_num, page in enumerate(reader.pages):
-        packet = BytesIO()
-        can = canvas.Canvas(packet, pagesize=(float(page.mediabox.width), float(page.mediabox.height)))
+    for page_num in range(len(pdf_document)):
+        page = pdf_document[page_num]
 
-        # Déterminer la taille de la page
-        width = float(page.mediabox.width)
-        height = float(page.mediabox.height)
-
-        # Positionner l'image en bas à droite
+        # Définir la position de la signature
+        width, height = page.rect.width, page.rect.height
         image_width = 200
         image_height = 100
         x_position = width - image_width - 10
         y_position = 150
 
-        can.drawImage(temp_image_path, x_position, y_position, width=image_width, height=image_height, mask="auto")
-        can.save()
+        # Ajouter l'image sur la page
+        page.insert_image(
+            fitz.Rect(x_position, y_position, x_position + image_width, y_position + image_height),
+            filename=temp_image_path
+        )
 
-        # Fusionner l'image avec la page originale
-        packet.seek(0)
-        overlay_reader = PdfReader(packet)
-        overlay_page = overlay_reader.pages[0]
-        page.merge_page(overlay_page)
-        writer.add_page(page)
+    pdf_document.save(output_pdf)
+    pdf_document.close()
 
     # Supprimer l'image temporaire
     os.remove(temp_image_path)
-
-    with open(output_pdf, "wb") as output_file:
-        writer.write(output_file)
 
 def extract_text_from_pdf(input_pdf):
     """
@@ -112,14 +102,14 @@ def process_files_and_sign_documents(uploaded_files, keyword, image_path):
                         if file.endswith(".pdf"):
                             pdf_path = os.path.join(root, file)
                             output_path = pdf_path.replace(".pdf", "_signed.pdf")
-                            search_and_add_signature(pdf_path, output_path, keyword, image_path)
-                            modified_files.append(output_path)
+                            if search_and_add_signature(pdf_path, output_path, keyword, image_path):
+                                modified_files.append(output_path)
 
         elif file_name.endswith(".pdf"):
             # Traiter les fichiers PDF individuels
             output_path = temp_path.replace(".pdf", "_signed.pdf")
-            search_and_add_signature(temp_path, output_path, keyword, image_path)
-            modified_files.append(output_path)
+            if search_and_add_signature(temp_path, output_path, keyword, image_path):
+                modified_files.append(output_path)
 
         # Supprime le fichier temporaire
         os.remove(temp_path)
@@ -128,7 +118,7 @@ def process_files_and_sign_documents(uploaded_files, keyword, image_path):
 
 def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
     """
-    Ajoute une signature (image) à chaque page d'un PDF, même si aucun texte n'est détecté.
+    Ajoute une signature (image) à chaque page d'un PDF uniquement si le fichier contient un mot-clé.
 
     Args:
         input_pdf (str): Chemin du fichier PDF d'entrée.
@@ -137,14 +127,13 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path):
         image_path (str): Chemin de l'image à insérer.
 
     Returns:
-        None
+        bool: True si le fichier a été modifié, False sinon.
     """
     text = extract_text_from_pdf(input_pdf)
-    if not text.strip():
-        st.warning(f"Le fichier {input_pdf} ne contient pas de texte détectable, mais il sera quand même signé.")
-    elif keyword in text:
-        st.info(f"Mot-clé trouvé dans le fichier {input_pdf}, ajout de la signature.")
-    add_image_to_pdf(input_pdf, output_pdf, image_path)
+    if keyword in text:
+        add_image_to_pdf(input_pdf, output_pdf, image_path)
+        return True
+    return False
 
 # Interface utilisateur Streamlit
 st.title("Outil de signature automatique des documents PDF")
