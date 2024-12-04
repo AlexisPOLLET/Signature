@@ -198,7 +198,7 @@ if st.button("Lancer la signature"):
                     zip_file.write(file_path, os.path.basename(file_path))
             zip_buffer.seek(0)
 
-             st.download_button(
+            st.download_button(
                 label="Télécharger tous les fichiers signés (ZIP)",
                 data=zip_buffer,
                 file_name="fichiers_signes.zip",
