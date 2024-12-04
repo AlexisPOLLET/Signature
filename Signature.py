@@ -35,8 +35,8 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path, position="bottom-right")
 
         # Définir la position de la signature
         width, height = page.rect.width, page.rect.height
-        image_width = 100
-        image_height = 50
+        image_width = 200
+        image_height = 100
 
         if position == "bottom-right":
             x_position = width - image_width - 100
