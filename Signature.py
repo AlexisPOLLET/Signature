@@ -204,7 +204,7 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, positio
         return True
     elif include_images and not text.strip():
         add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position)
-               return True
+        return True
 
     return False
 
