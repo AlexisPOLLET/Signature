@@ -44,11 +44,11 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path, position="bottom-right")
             width, height = height, width
 
         if position == "bottom-right":
-            x_position = width - image_width - 50
-            y_position = height - image_height - 150
+            x_position = width - image_width - 10
+            y_position = 10
         elif position == "bottom-left":
-            x_position = 50
-            y_position = height - image_height - 150
+            x_position = 10
+            y_position = 10
         else:
             raise ValueError("Position non prise en charge. Utilisez 'bottom-right' ou 'bottom-left'.")
 
@@ -83,7 +83,7 @@ def extract_text_from_pdf(input_pdf):
 
     return text
 
-def process_files_and_sign_documents(uploaded_files, keyword, image_path, position):
+def process_files_and_sign_documents(uploaded_files, keyword, image_path, position, include_images):
     """
     Traite les fichiers PDF ou les archives ZIP téléversées et ajoute une signature (image) à ceux qui contiennent un mot-clé ou aux fichiers sans texte détectable.
 
@@ -92,6 +92,7 @@ def process_files_and_sign_documents(uploaded_files, keyword, image_path, positi
         keyword (str): Mot-clé à rechercher dans les fichiers.
         image_path (str): Chemin de l'image à insérer.
         position (str): Position de la signature ("bottom-right" ou "bottom-left").
+        include_images (bool): Inclure les fichiers avec uniquement des images.
 
     Returns:
         list: Liste des fichiers modifiés.
@@ -116,13 +117,13 @@ def process_files_and_sign_documents(uploaded_files, keyword, image_path, positi
                         if file.endswith(".pdf"):
                             pdf_path = os.path.join(root, file)
                             output_path = pdf_path.replace(".pdf", "_signed.pdf")
-                            if search_and_add_signature(pdf_path, output_path, keyword, image_path, position):
+                            if search_and_add_signature(pdf_path, output_path, keyword, image_path, position, include_images):
                                 modified_files.append(output_path)
 
         elif file_name.endswith(".pdf"):
             # Traiter les fichiers PDF individuels
             output_path = temp_path.replace(".pdf", "_signed.pdf")
-            if search_and_add_signature(temp_path, output_path, keyword, image_path, position):
+            if search_and_add_signature(temp_path, output_path, keyword, image_path, position, include_images):
                 modified_files.append(output_path)
 
         # Supprime le fichier temporaire
@@ -130,7 +131,7 @@ def process_files_and_sign_documents(uploaded_files, keyword, image_path, positi
 
     return modified_files
 
-def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, position):
+def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, position, include_images):
     """
     Ajoute une signature (image) à chaque page d'un PDF, même si aucun texte n'est détectable.
 
@@ -140,6 +141,7 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, positio
         keyword (str): Mot-clé à rechercher dans le fichier.
         image_path (str): Chemin de l'image à insérer.
         position (str): Position de la signature ("bottom-right" ou "bottom-left").
+        include_images (bool): Inclure les fichiers avec uniquement des images.
 
     Returns:
         bool: True si le fichier a été modifié, False sinon.
@@ -148,7 +150,7 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, positio
     pdf_document = fitz.open(input_pdf)
 
     # Ajouter la signature si le mot-clé est présent ou si le PDF contient uniquement des images
-    if keyword in text or len(pdf_document) > 0:
+    if keyword in text or (include_images and not text.strip()):
         add_image_to_pdf(input_pdf, output_pdf, image_path, position)
         return True
 
@@ -164,9 +166,10 @@ uploaded_files = st.file_uploader("Téléchargez des fichiers ZIP ou PDF", type=
 search_keyword = st.text_input("Entrez le mot-clé à rechercher")
 signature_image = st.file_uploader("Téléchargez une image de signature", type=["png", "jpg", "jpeg"])
 position = st.radio("Choisissez la position de la signature :", ["bottom-right", "bottom-left"])
+include_images = st.checkbox("Signer les fichiers contenant uniquement des images")
 
 if st.button("Lancer la signature"):
-    if uploaded_files and search_keyword and signature_image:
+    if uploaded_files and signature_image:
         # Sauvegarde de l'image temporairement
         image_path = f"temp_{signature_image.name}"
         with open(image_path, "wb") as f:
@@ -175,7 +178,7 @@ if st.button("Lancer la signature"):
         modified_files = []
 
         with st.spinner("Traitement en cours..."):
-            modified_files = process_files_and_sign_documents(uploaded_files, search_keyword, image_path, position)
+            modified_files = process_files_and_sign_documents(uploaded_files, search_keyword, image_path, position, include_images)
 
         if modified_files:
             st.success(f"Les fichiers suivants ont été signés avec succès :")
