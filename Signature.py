@@ -22,12 +22,10 @@ def add_image_to_pdf_with_text(input_pdf, output_pdf, image_path, position="bott
     image = Image.open(image_path).convert("RGBA")
     alpha = 128  # Transparence
 
-   # Appliquer une rotation de 90 degrés
-    rotated_image = image.rotate(90, expand=True)
-    transparent_image = Image.new("RGBA", rotated_image.size, (255, 255, 255, 0))
-    for x in range(rotated_image.width):
-        for y in range(rotated_image.height):
-            r, g, b, a = rotated_image.getpixel((x, y))
+    transparent_image = Image.new("RGBA", image.size, (255, 255, 255, 0))
+    for x in range(image.width):
+        for y in range(image.height):
+            r, g, b, a = image.getpixel((x, y))
             transparent_image.putpixel((x, y), (r, g, b, int(a * (alpha / 255.0))))
     temp_image_path = "temp_transparent_image.png"
     transparent_image.save(temp_image_path, "PNG")
@@ -37,15 +35,15 @@ def add_image_to_pdf_with_text(input_pdf, output_pdf, image_path, position="bott
 
         # Définir la position de la signature pour les PDF avec texte
         width, height = page.rect.width, page.rect.height
-        image_width = 150
-        image_height = 75
+        image_width = 100
+        image_height = 50
 
         if position == "bottom-right":
-            x_position = width - image_width - 50
-            y_position = height - image_height - 150
+            x_position = width - image_width - 10
+            y_position = height - image_height - 10
         elif position == "bottom-left":
-            x_position = 50
-            y_position = height - image_height - 150
+            x_position = 10
+            y_position = height - image_height - 10
         else:
             raise ValueError("Position non prise en charge. Utilisez 'bottom-right' ou 'bottom-left'.")
 
@@ -63,7 +61,7 @@ def add_image_to_pdf_with_text(input_pdf, output_pdf, image_path, position="bott
 
 def add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position="bottom-right"):
     """
-    Ajoute une image en bas de chaque page d'un PDF contenant uniquement des images.
+    Ajoute une image en bas de chaque page d'un PDF contenant uniquement des images, avec une rotation de 90 degrés.
 
     Args:
         input_pdf (str): Chemin du fichier PDF d'entrée.
@@ -75,10 +73,12 @@ def add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position="bo
     image = Image.open(image_path).convert("RGBA")
     alpha = 128  # Transparence
 
-    transparent_image = Image.new("RGBA", image.size, (255, 255, 255, 0))
-    for x in range(image.width):
-        for y in range(image.height):
-            r, g, b, a = image.getpixel((x, y))
+    # Appliquer une rotation de 90 degrés
+    rotated_image = image.rotate(90, expand=True)
+    transparent_image = Image.new("RGBA", rotated_image.size, (255, 255, 255, 0))
+    for x in range(rotated_image.width):
+        for y in range(rotated_image.height):
+            r, g, b, a = rotated_image.getpixel((x, y))
             transparent_image.putpixel((x, y), (r, g, b, int(a * (alpha / 255.0))))
     temp_image_path = "temp_transparent_image.png"
     transparent_image.save(temp_image_path, "PNG")
@@ -92,11 +92,11 @@ def add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position="bo
         image_height = 75
 
         if position == "bottom-right":
-            x_position = width - image_width - 200
-            y_position = 50
+            x_position = width - image_width - 20
+            y_position = 20
         elif position == "bottom-left":
-            x_position = 200
-            y_position = 50
+            x_position = 20
+            y_position = 20
         else:
             raise ValueError("Position non prise en charge. Utilisez 'bottom-right' ou 'bottom-left'.")
 
@@ -202,7 +202,7 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, positio
 
     # Ajouter la signature si le mot-clé est présent ou si le PDF contient uniquement des images
     if keyword in text:
-        add_image_to_pdf_with_text(input_pdf, output_pdf, image_path, position)
+        add_image_to_pdf_with_text(input_pdf, output_pdf, image_path, position
         return True
     elif include_images and not text.strip():
         add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position)
