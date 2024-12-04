@@ -190,12 +190,15 @@ if st.button("Lancer la signature"):
                         file_name=os.path.basename(file_path),
                         mime="application/pdf"
                     )
-        else:
-            st.warning("Aucun fichier n'a été modifié.")
 
-        # Nettoyage du fichier temporaire
-        os.remove(image_path)
-        for file_path in modified_files:
-            os.remove(file_path)
-    else:
-        st.error("Veuillez fournir des fichiers ZIP ou PDF, un mot-clé et une image de signature.")
+            # Ajouter un bouton pour télécharger tous les fichiers signés en une seule archive ZIP
+            zip_buffer = BytesIO()
+            with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+                for file_path in modified_files:
+                    zip_file.write(file_path, os.path.basename(file_path))
+            zip_buffer.seek(0)
+
+            st.download_button(
+                label="Télécharger tous les fichiers signés (ZIP)",
+                data=zip_buffer,
+                file_name="fichiers_signes
