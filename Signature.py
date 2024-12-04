@@ -38,12 +38,17 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path, position="bottom-right")
         image_width = 100
         image_height = 50
 
+        # Ajuster pour la rotation de la page
+        rotation = page.rotation
+        if rotation in [90, 270]:
+            width, height = height, width
+
         if position == "bottom-right":
-            x_position = width - image_width - 50
-            y_position = 150
+            x_position = width - image_width - 10
+            y_position = height - image_height - 10
         elif position == "bottom-left":
-            x_position = 50
-            y_position = 150
+            x_position = 10
+            y_position = height - image_height - 10
         else:
             raise ValueError("Position non prise en charge. Utilisez 'bottom-right' ou 'bottom-left'.")
 
@@ -140,9 +145,13 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, positio
         bool: True si le fichier a été modifié, False sinon.
     """
     text = extract_text_from_pdf(input_pdf)
-    if keyword in text or not text.strip():
+    pdf_document = fitz.open(input_pdf)
+
+    # Ajouter la signature si le mot-clé est présent ou si le PDF contient uniquement des images
+    if keyword in text or len(pdf_document) > 0:
         add_image_to_pdf(input_pdf, output_pdf, image_path, position)
         return True
+
     return False
 
 # Interface utilisateur Streamlit
@@ -187,4 +196,3 @@ if st.button("Lancer la signature"):
             os.remove(file_path)
     else:
         st.error("Veuillez fournir des fichiers ZIP ou PDF, un mot-clé et une image de signature.")
-
