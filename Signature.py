@@ -22,10 +22,12 @@ def add_image_to_pdf_with_text(input_pdf, output_pdf, image_path, position="bott
     image = Image.open(image_path).convert("RGBA")
     alpha = 128  # Transparence
 
-    transparent_image = Image.new("RGBA", image.size, (255, 255, 255, 0))
-    for x in range(image.width):
-        for y in range(image.height):
-            r, g, b, a = image.getpixel((x, y))
+   # Appliquer une rotation de 90 degrés
+    rotated_image = image.rotate(90, expand=True)
+    transparent_image = Image.new("RGBA", rotated_image.size, (255, 255, 255, 0))
+    for x in range(rotated_image.width):
+        for y in range(rotated_image.height):
+            r, g, b, a = rotated_image.getpixel((x, y))
             transparent_image.putpixel((x, y), (r, g, b, int(a * (alpha / 255.0))))
     temp_image_path = "temp_transparent_image.png"
     transparent_image.save(temp_image_path, "PNG")
