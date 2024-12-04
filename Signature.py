@@ -10,7 +10,7 @@ import fitz  # PyMuPDF
 
 def add_image_to_pdf(input_pdf, output_pdf, image_path, position="bottom-right"):
     """
-    Ajoute une image dans une zone blanche de chaque page d'un PDF, en petite taille, avec transparence.
+    Ajoute une image en bas de chaque page d'un PDF, en petite taille, avec transparence.
 
     Args:
         input_pdf (str): Chemin du fichier PDF d'entrée.
@@ -142,7 +142,6 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, positio
         bool: True si le fichier a été modifié, False sinon.
     """
     text = extract_text_from_pdf(input_pdf)
-    pdf_document = fitz.open(input_pdf)
 
     # Ajouter la signature si le mot-clé est présent ou si le PDF contient uniquement des images
     if keyword in text or (include_images and not text.strip()):
@@ -204,7 +203,3 @@ if st.button("Lancer la signature"):
 
         # Nettoyage des fichiers temporaires
         os.remove(image_path)
-        for file_path in modified_files:
-            os.remove(file_path)
-    else:
-        st.error("Veuillez fournir des fichiers ZIP ou PDF et une image de signature.")
