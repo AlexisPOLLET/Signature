@@ -198,7 +198,18 @@ if st.button("Lancer la signature"):
                     zip_file.write(file_path, os.path.basename(file_path))
             zip_buffer.seek(0)
 
-            st.download_button(
+             st.download_button(
                 label="Télécharger tous les fichiers signés (ZIP)",
                 data=zip_buffer,
-                file_name="fichiers_signes
+                file_name="fichiers_signes.zip",
+                mime="application/zip"
+            )
+        else:
+            st.warning("Aucun fichier n'a été modifié.")
+
+        # Nettoyage des fichiers temporaires
+        os.remove(image_path)
+        for file_path in modified_files:
+            os.remove(file_path)
+    else:
+        st.error("Veuillez fournir des fichiers ZIP ou PDF et une image de signature.")
