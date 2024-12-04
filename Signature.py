@@ -38,11 +38,11 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path, position="bottom-right")
         image_width = 100
         image_height = 50
 
-        if position == "bottom-right":
-            x_position = width - image_width - 10
+        if position == "En bas à droite":
+            x_position = width - image_width - -10
             y_position = 150
-        elif position == "bottom-left":
-            x_position = 10
+        elif position == "En bas à gauche":
+            x_position = -10
             y_position = 150
         else:
             raise ValueError("Position non prise en charge. Utilisez 'bottom-right' ou 'bottom-left'.")
