@@ -88,8 +88,8 @@ def add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position="bo
 
         # Définir la position de la signature pour les PDF avec images uniquement
         width, height = page.rect.width, page.rect.height
-        image_width = 200
-        image_height = 100
+        image_width = 300
+        image_height = 150
 
         if position == "bottom-right":
             x_position = width - image_width - 200
