@@ -38,11 +38,6 @@ def add_image_to_pdf(input_pdf, output_pdf, image_path, position="bottom-right")
         image_width = 100
         image_height = 50
 
-        # Ajuster pour la rotation de la page
-        rotation = page.rotation
-        if rotation in [90, 270]:
-            width, height = height, width
-
         if position == "bottom-right":
             x_position = width - image_width - 10
             y_position = 10
