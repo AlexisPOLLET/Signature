@@ -112,12 +112,9 @@ def add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position="bo
     # Supprimer l'image temporaire
     os.remove(temp_image_path)
 
-import pytesseract
-from pdf2image import convert_from_path
-
 def extract_text_from_pdf(input_pdf):
     """
-    Extrait le texte d'un fichier PDF, avec OCR si nécessaire.
+    Extrait le texte d'un fichier PDF.
 
     Args:
         input_pdf (str): Chemin du fichier PDF.
@@ -127,23 +124,13 @@ def extract_text_from_pdf(input_pdf):
     """
     text = ""
 
-    # Étape 1 : Extraction avec PyPDF2
-    try:
-        reader = PdfReader(input_pdf)
-        for page in reader.pages:
-            text += page.extract_text()
-    except Exception as e:
-        print(f"Erreur lors de l'extraction avec PyPDF2 : {e}")
-
-    # Étape 2 : Utilisation de l'OCR si aucun texte n'est extrait
-    if not text.strip():  # Si le texte est vide
-        print(f"Utilisation de l'OCR pour le fichier : {input_pdf}")
-        images = convert_from_path(input_pdf)
-        for image in images:
-            text += pytesseract.image_to_string(image, lang="eng")
+    # Tenter d'extraire le texte directement
+    reader = PdfReader(input_pdf)
+    for page in reader.pages:
+        text += page.extract_text()
 
     return text
-    
+
 def process_files_and_sign_documents(uploaded_files, keyword, image_path, position, include_images):
     """
     Traite les fichiers PDF ou les archives ZIP téléversées et ajoute une signature (image) à ceux qui contiennent un mot-clé ou aux fichiers sans texte détectable.
@@ -215,36 +202,20 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, positio
     text = clean_text(text)
 
     # Ajouter la signature si le mot-clé est présent ou si le PDF contient uniquement des images
-    if keyword.lower() in text.lower():
-        print(f"Mot-clé '{keyword}' trouvé dans le fichier {input_pdf}")
+    if keyword.lower() in text.lower():  # Recherche insensible à la casse
         add_image_to_pdf_with_text(input_pdf, output_pdf, image_path, position)
         return True
-    elif include_images and not text.strip():  # Si aucun texte n'est détecté
-        print(f"Fichier {input_pdf} sans texte détecté, signature ajoutée.")
+    elif include_images and not text.strip():
         add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position)
         return True
 
-    print(f"Mot-clé '{keyword}' non trouvé dans le fichier {input_pdf}")
     return False
-    
-def clean_text(text):
-    """
-    Nettoie le texte extrait pour supprimer les caractères invisibles et les espaces inutiles.
-
-    Args:
-        text (str): Texte brut extrait du PDF.
-
-    Returns:
-        str: Texte nettoyé.
-    """
-    return " ".join(text.split())
-
 
 # Interface utilisateur Streamlit
 st.title("Outil de signature automatique des documents PDF")
 
 st.write("**Instructions :** Vous pouvez téléverser plusieurs fichiers PDF ou une archive ZIP contenant des fichiers PDF.")
-st.code("pip install pytesseract pdf2image pillow PyPDF2 pymupdf")
+st.code("pip install PyPDF2 reportlab streamlit pillow pymupdf")
 
 uploaded_files = st.file_uploader("Téléchargez des fichiers ZIP ou PDF", type=["zip", "pdf"], accept_multiple_files=True)
 search_keyword = st.text_input("Entrez le mot-clé à rechercher")
