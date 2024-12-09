@@ -198,24 +198,30 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, positio
     if os.path.exists(output_pdf):
         os.remove(output_pdf)
 
+    # Extraction et nettoyage du texte
     text = extract_text_from_pdf(input_pdf)
-    text = clean_text(text)
+    cleaned_text = clean_text(text)
 
-    # Débogage : afficher le texte extrait
-    print(f"Texte extrait pour le fichier {input_pdf} : {text[:500]}...\n")
+    # Affichage pour débogage
+    print(f"Texte extrait pour {input_pdf} :\n{cleaned_text[:500]}...\n")
+    print(f"Recherche du mot-clé '{keyword}' dans le texte extrait.")
 
-    # Ajouter la signature si le mot-clé est présent ou si le PDF contient uniquement des images
-    if keyword.lower() in text.lower():  # Recherche insensible à la casse
-        print(f"Mot-clé '{keyword}' trouvé dans le fichier {input_pdf}")
+    # Cas 1 : Mot-clé détecté dans le texte
+    if keyword.lower() in cleaned_text.lower():  # Recherche insensible à la casse
+        print(f"Mot-clé '{keyword}' trouvé dans {input_pdf}. Ajout de la signature.")
         add_image_to_pdf_with_text(input_pdf, output_pdf, image_path, position)
         return True
-    elif include_images and not text.strip():
-        print(f"Fichier {input_pdf} sans texte détecté, signature ajoutée (images uniquement).")
+
+    # Cas 2 : Aucun texte détecté mais include_images activé
+    elif include_images and not cleaned_text.strip():
+        print(f"Aucun texte trouvé dans {input_pdf}, mais 'include_images' est activé. Ajout de la signature.")
         add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position)
         return True
 
-    print(f"Mot-clé '{keyword}' non trouvé dans le fichier {input_pdf}")
+    # Cas 3 : Mot-clé introuvable et pas d'image
+    print(f"Mot-clé '{keyword}' non trouvé dans {input_pdf}. Aucun traitement effectué.")
     return False
+
     
 def clean_text(text):
     """
