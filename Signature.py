@@ -244,7 +244,7 @@ def clean_text(text):
 st.title("Outil de signature automatique des documents PDF")
 
 st.write("**Instructions :** Vous pouvez téléverser plusieurs fichiers PDF ou une archive ZIP contenant des fichiers PDF.")
-st.code("pip install PyPDF2 reportlab streamlit pillow pymupdf")
+st.code("pip install pytesseract pdf2image pillow PyPDF2 pymupdf")
 
 uploaded_files = st.file_uploader("Téléchargez des fichiers ZIP ou PDF", type=["zip", "pdf"], accept_multiple_files=True)
 search_keyword = st.text_input("Entrez le mot-clé à rechercher")
