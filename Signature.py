@@ -114,7 +114,7 @@ def add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position="bo
 
 def extract_text_from_pdf(input_pdf):
     """
-    Extrait le texte d'un fichier PDF, avec une méthode de secours utilisant PyMuPDF.
+    Extrait le texte d'un fichier PDF.
 
     Args:
         input_pdf (str): Chemin du fichier PDF.
@@ -124,22 +124,10 @@ def extract_text_from_pdf(input_pdf):
     """
     text = ""
 
-    # Tentative avec PyPDF2
-    try:
-        reader = PdfReader(input_pdf)
-        for page in reader.pages:
-            text += page.extract_text()
-    except Exception as e:
-        print(f"Erreur avec PyPDF2 : {e}")
-
-    # Si aucun texte n'est extrait, utiliser PyMuPDF comme méthode de secours
-    if not text.strip():
-        try:
-            pdf_document = fitz.open(input_pdf)
-            for page_num in range(len(pdf_document)):
-                text += pdf_document[page_num].get_text()
-        except Exception as e:
-            print(f"Erreur avec PyMuPDF : {e}")
+    # Tenter d'extraire le texte directement
+    reader = PdfReader(input_pdf)
+    for page in reader.pages:
+        text += page.extract_text()
 
     return text
 
@@ -158,7 +146,6 @@ def process_files_and_sign_documents(uploaded_files, keyword, image_path, positi
         list: Liste des fichiers modifiés.
     """
     modified_files = []
-
     for uploaded_file in uploaded_files:
         file_name = uploaded_file.name
         temp_path = f"temp_{file_name}"
@@ -167,14 +154,8 @@ def process_files_and_sign_documents(uploaded_files, keyword, image_path, positi
         with open(temp_path, "wb") as f:
             f.write(uploaded_file.read())
 
-        # Gestion des PDF
-        if file_name.endswith(".pdf"):
-            output_path = temp_path.replace(".pdf", "_signed.pdf")
-            if search_and_add_signature(temp_path, output_path, keyword, image_path, position, include_images):
-                modified_files.append(output_path)
-
-        # Gestion des archives ZIP
-        elif file_name.endswith(".zip"):
+        if file_name.endswith(".zip"):
+            # Traiter l'archive ZIP
             with zipfile.ZipFile(temp_path, 'r') as zip_ref:
                 extract_dir = f"temp_extracted_{file_name}"
                 zip_ref.extractall(extract_dir)
@@ -186,6 +167,12 @@ def process_files_and_sign_documents(uploaded_files, keyword, image_path, positi
                             output_path = pdf_path.replace(".pdf", "_signed.pdf")
                             if search_and_add_signature(pdf_path, output_path, keyword, image_path, position, include_images):
                                 modified_files.append(output_path)
+
+        elif file_name.endswith(".pdf"):
+            # Traiter les fichiers PDF individuels
+            output_path = temp_path.replace(".pdf", "_signed.pdf")
+            if search_and_add_signature(temp_path, output_path, keyword, image_path, position, include_images):
+                modified_files.append(output_path)
 
         # Supprime le fichier temporaire
         os.remove(temp_path)
@@ -211,43 +198,17 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, positio
     if os.path.exists(output_pdf):
         os.remove(output_pdf)
 
-    # Extraction et nettoyage du texte
     text = extract_text_from_pdf(input_pdf)
-    cleaned_text = clean_text(text)
 
-    # Affichage pour débogage
-    print(f"Texte extrait pour {input_pdf} :\n{cleaned_text[:500]}...\n")
-    print(f"Recherche du mot-clé '{keyword}' dans le texte extrait.")
-
-    # Cas 1 : Mot-clé détecté dans le texte
-    if keyword.lower() in cleaned_text.lower():  # Recherche insensible à la casse
-        print(f"Mot-clé '{keyword}' trouvé dans {input_pdf}. Ajout de la signature.")
+    # Ajouter la signature si le mot-clé est présent ou si le PDF contient uniquement des images
+    if keyword in text:
         add_image_to_pdf_with_text(input_pdf, output_pdf, image_path, position)
         return True
-
-    # Cas 2 : Aucun texte détecté mais include_images activé
-    elif include_images and not cleaned_text.strip():
-        print(f"Aucun texte trouvé dans {input_pdf}, mais 'include_images' est activé. Ajout de la signature.")
+    elif include_images and not text.strip():
         add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position)
         return True
 
-    # Cas 3 : Mot-clé introuvable et pas d'image
-    print(f"Mot-clé '{keyword}' non trouvé dans {input_pdf}. Aucun traitement effectué.")
     return False
-
-    
-def clean_text(text):
-    """
-    Nettoie le texte extrait pour supprimer les caractères invisibles et les espaces inutiles.
-
-    Args:
-        text (str): Texte brut extrait du PDF.
-
-    Returns:
-        str: Texte nettoyé.
-    """
-    return " ".join(text.split())
-
 
 # Interface utilisateur Streamlit
 st.title("Outil de signature automatique des documents PDF")
