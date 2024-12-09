@@ -210,6 +210,19 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, positio
         return True
 
     return False
+    
+def clean_text(text):
+    """
+    Nettoie le texte extrait pour supprimer les caractères invisibles et les espaces inutiles.
+
+    Args:
+        text (str): Texte brut extrait du PDF.
+
+    Returns:
+        str: Texte nettoyé.
+    """
+    return " ".join(text.split())
+
 
 # Interface utilisateur Streamlit
 st.title("Outil de signature automatique des documents PDF")
