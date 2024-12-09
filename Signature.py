@@ -202,13 +202,16 @@ def search_and_add_signature(input_pdf, output_pdf, keyword, image_path, positio
     text = clean_text(text)
 
     # Ajouter la signature si le mot-clé est présent ou si le PDF contient uniquement des images
-    if keyword.lower() in text.lower():  # Recherche insensible à la casse
+    if keyword.lower() in text.lower():
+        print(f"Mot-clé '{keyword}' trouvé dans le fichier {input_pdf}")
         add_image_to_pdf_with_text(input_pdf, output_pdf, image_path, position)
         return True
-    elif include_images and not text.strip():
+    elif include_images and not text.strip():  # Si aucun texte n'est détecté
+        print(f"Fichier {input_pdf} sans texte détecté, signature ajoutée.")
         add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position)
         return True
 
+    print(f"Mot-clé '{keyword}' non trouvé dans le fichier {input_pdf}")
     return False
     
 def clean_text(text):
