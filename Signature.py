@@ -158,6 +158,7 @@ def process_files_and_sign_documents(uploaded_files, keyword, image_path, positi
         list: Liste des fichiers modifiés.
     """
     modified_files = []
+
     for uploaded_file in uploaded_files:
         file_name = uploaded_file.name
         temp_path = f"temp_{file_name}"
@@ -166,8 +167,14 @@ def process_files_and_sign_documents(uploaded_files, keyword, image_path, positi
         with open(temp_path, "wb") as f:
             f.write(uploaded_file.read())
 
-        if file_name.endswith(".zip"):
-            # Traiter l'archive ZIP
+        # Gestion des PDF
+        if file_name.endswith(".pdf"):
+            output_path = temp_path.replace(".pdf", "_signed.pdf")
+            if search_and_add_signature(temp_path, output_path, keyword, image_path, position, include_images):
+                modified_files.append(output_path)
+
+        # Gestion des archives ZIP
+        elif file_name.endswith(".zip"):
             with zipfile.ZipFile(temp_path, 'r') as zip_ref:
                 extract_dir = f"temp_extracted_{file_name}"
                 zip_ref.extractall(extract_dir)
@@ -179,12 +186,6 @@ def process_files_and_sign_documents(uploaded_files, keyword, image_path, positi
                             output_path = pdf_path.replace(".pdf", "_signed.pdf")
                             if search_and_add_signature(pdf_path, output_path, keyword, image_path, position, include_images):
                                 modified_files.append(output_path)
-
-        elif file_name.endswith(".pdf"):
-            # Traiter les fichiers PDF individuels
-            output_path = temp_path.replace(".pdf", "_signed.pdf")
-            if search_and_add_signature(temp_path, output_path, keyword, image_path, position, include_images):
-                modified_files.append(output_path)
 
         # Supprime le fichier temporaire
         os.remove(temp_path)
