@@ -4,4 +4,3 @@ reportlab
 pillow
 pdf2image
 pytesseract
-fitz
