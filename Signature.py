@@ -114,7 +114,7 @@ def add_image_to_pdf_with_images(input_pdf, output_pdf, image_path, position="bo
 
 def extract_text_from_pdf(input_pdf):
     """
-    Extrait le texte d'un fichier PDF.
+    Extrait le texte d'un fichier PDF, avec une méthode de secours utilisant PyMuPDF.
 
     Args:
         input_pdf (str): Chemin du fichier PDF.
@@ -124,10 +124,22 @@ def extract_text_from_pdf(input_pdf):
     """
     text = ""
 
-    # Tenter d'extraire le texte directement
-    reader = PdfReader(input_pdf)
-    for page in reader.pages:
-        text += page.extract_text()
+    # Tentative avec PyPDF2
+    try:
+        reader = PdfReader(input_pdf)
+        for page in reader.pages:
+            text += page.extract_text()
+    except Exception as e:
+        print(f"Erreur avec PyPDF2 : {e}")
+
+    # Si aucun texte n'est extrait, utiliser PyMuPDF comme méthode de secours
+    if not text.strip():
+        try:
+            pdf_document = fitz.open(input_pdf)
+            for page_num in range(len(pdf_document)):
+                text += pdf_document[page_num].get_text()
+        except Exception as e:
+            print(f"Erreur avec PyMuPDF : {e}")
 
     return text
 
