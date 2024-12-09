@@ -164,13 +164,13 @@ def process_files_and_sign_documents(uploaded_files, keyword, image_path, positi
                     for file in files:
                         if file.endswith(".pdf"):
                             pdf_path = os.path.join(root, file)
-                            output_path = pdf_path.replace(".pdf", "_signed.pdf")
+                            output_path = pdf_path.replace(".pdf", "_s.pdf")
                             if search_and_add_signature(pdf_path, output_path, keyword, image_path, position, include_images):
                                 modified_files.append(output_path)
 
         elif file_name.endswith(".pdf"):
             # Traiter les fichiers PDF individuels
-            output_path = temp_path.replace(".pdf", "_signed.pdf")
+            output_path = temp_path.replace(".pdf", "_s.pdf")
             if search_and_add_signature(temp_path, output_path, keyword, image_path, position, include_images):
                 modified_files.append(output_path)
 
